@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Vandspildsmåler | WiFi Setup</title>
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/style.css" type="text/css"/>
+    </head>
+    <body>
+        <h1 class="text">CONNECTION SETUP</h1>
+        <div class="SSID">
+            <h2 class="text">SSID</h2>
+            <input type="text" id="inputbox_ssid" name="inputSSID" class="inputbox" required>
+        </div>
+        <div class="PASSWORD">
+            <h2 class="text">PASSWORD</h2>
+            <input type="text" id="inputbox_pass" name="inputPASS" class="inputbox" required>
+        </div>
+
+        <button type="button" onclick="sendData()">
+            <div class="text" id="savebtn">SAVE</div>
+        </button>
+
+        <script src="script/script.js"></script>
+    </body>
+</html>

@@ -1,0 +1,61 @@
+@font-face {
+    font-family: "Akira";
+    src: url(../fonts/Akira-Expanded-Demo.otf);
+}
+
+body {
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: hidden;
+
+    background-color: #f9f9f9;
+
+    padding-left: 30px;
+}
+
+.text {
+    font-family: "Akira";
+    color: #808080;
+    font-size: 40px;
+    margin: 0;
+}
+
+.text:nth-child(1) {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.inputbox {
+    margin-left: 60px;
+
+    background-color: #ffffff;
+    border-color: black;
+    border-width: 3px;
+    border-style: solid;
+    height: 30px;
+    width: 40vW;
+}
+
+.SSID h2 {
+    padding-left: 30px;
+    font-size: 30px;
+}   
+
+
+.PASSWORD h2{
+    margin-top: 10px;
+    padding-left: 30px;
+    font-size: 30px;
+}
+
+button {
+    margin-top: 30px;
+    margin-left: 40vw; 
+    background-color: #dbdbdb;
+
+}
+
+#savebtn {
+    margin: 0;
+    font-size: 15px;
+}
