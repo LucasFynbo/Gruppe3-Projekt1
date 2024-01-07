@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Login</title>
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/login.css" type="text/css"/>
+    </head>
+    <body>
+        <div class="container">
+            <img id="logo-img" src="images/logo.png">
+            <h1 id="header-text">Sign in with your Device ID</h1>
+            
+            <div class="inputboxes">
+                <input type="text" placeholder="Device ID" id="inputbox_deviceid" required><br>
+                <input type="password" placeholder="Password" id="inputbox_password" required>
+            </div>
+
+            <img src="images/submit-arrow.png" id="submit-arrow"><br>
+
+            <div id="clickable">
+                <div class="link-text" id="hiw_clickable">How It Works</div>
+                <div id="hiw_open">
+                    <div id="close_btn_hiw">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                    <h2>How It Works</h2>
+                    <p>Please see your device for a label specifying a "Device ID" and the associated "Password".<br>
+                    Use these credentials to log into your panel to get the latest information about your water waste.</p>
+                </div>
+
+                <div class="link-text" id="cu_clickable">Contact Us</div>
+                <div id="cu_open">
+                    <div id="close_btn_cu">
+                        <div class="bar"></div>
+                        <div class="bar"></div>
+                    </div>
+                    <h2>Contact Us</h2>
+                    <p>Send us a message describing your issue or thoughts.</p>
+
+                    <div id="inputboxes-row1">
+                        <input type="text" placeholder="Device ID" id="inputbox_support_deviceid" required>
+                        <input type="text" placeholder="Email" id="inputbox_customer_email" required>
+                    </div>
+                    <div id="inputboxes-row2">
+                        <select id="inputbox_category" required>
+                            <option value="" disabled selected>Select a category</option>
+                            <option value="technical-issue">Technical Issue</option>
+                            <option value="feedback">Feedback</option>
+                        </select>
+                    </div>
+                    <textarea placeholder="Tell us what you are thinking!" id="inputbox_msg" required></textarea>
+                    <div id="submit-btn">Submit</div>
+                </div>
+            </div>
+        </div>
+        <div class="footer"></div>
+        <script src="script/login.js"></script>
+    </body>
+</html>
