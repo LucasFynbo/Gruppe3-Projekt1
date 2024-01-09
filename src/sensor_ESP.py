@@ -1,37 +1,27 @@
-from machine import ADC, Pin
-import time
+import socket
+import sensor_Connection
 
-# Access Point class
+esp_ip = sensor_Connection.sensorConnection()
 
-
-
-class Lm335:
-        def __init__(self, pin_number, attenuation=ADC.ATTN_11DB):
-            self.adc_pin= pin_number
-            self.adc = ADC(Pin(self.adc_pin))
-            self.adc.atten(attenuation)
-        
-        def read_temperature(self):
-            adc_value = self.adc.read_uv()
-            temperature_celsius = adc_value*0.0001 - 273.15
-            return temperature_celsius
+class Sensor:
+    def __init__(self):
+        self.deviceid_path: str = './deviceid.txt'        
 
 
-def main():
-    adc_pin3 = 3
-    adc_pin4 = 4
+class MySocket:
+    def __init__(self):
+        self.csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    sensor1 = Lm335(adc_pin3)
-    sensor2 = Lm335(adc_pin4)
+        srvaddr: str = '79.171.148.173'
+        srvport: int = 13371
 
-    while True:
-        temperature1 = sensor1.read_temperature()
-        temperature2 = sensor2.read_temperature()
-        
-        print ("temp 1 i celsius:", temperature1)
-        print("temp 2 i celsius", temperature2)
-        
-        time.sleep(1)
+        self.ssocket_addr = (srvaddr, srvport)
+
+    def send_data(self):
+        self.csocket.sendto('request device ID'.encode('utf-8'), self.ssocket_addr)
+
+        device_id = self.csocket.recv(1024).decode('utf-8')
+        print(device_id)
 
 if __name__ == "__main__":
-    main()
+    mysocket = MySocket()

@@ -193,7 +193,7 @@ class ConnectHandler:
             return sta_if.ifconfig()[0]
         
 
-if __name__ == "__main__":
+def sensorConnection():
     AP = AccessPoint()
     AP.activate()
     
@@ -205,5 +205,5 @@ if __name__ == "__main__":
     print(ssid_value, pass_value)
     
     connect_to_wifi = ConnectHandler(ssid_value, pass_value)
-    connect_to_wifi.activate()
+    return connect_to_wifi.activate()
 
