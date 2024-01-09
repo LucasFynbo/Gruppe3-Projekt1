@@ -28,7 +28,7 @@ def id_gen():
             print(kode)
 
             # Tjek MySQL db
-            mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id))
+            mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
             result = mycursor.fetchone()
 
             if result is None:
@@ -47,7 +47,7 @@ def id_gen():
 
 class NetworkCom:
     def __init__(self) -> None:
-        HOST: str = '192.168.240.173' # Listen på alle IP'er assigned til serverens interfaces
+        HOST: str = '0.0.0.0' # Listen på alle IP'er assigned til serverens interfaces
         PORT: int = 13371
         backlog = 5
 
