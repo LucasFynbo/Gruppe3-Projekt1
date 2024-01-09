@@ -2,7 +2,7 @@
 function sendData() {
     // Change savebtn text
     const changeText = document.querySelector("#savebtn");
-    changeText.textContent = "Your configuration has been saved.<br>If misinput, please restart your device and try again.";
+    changeText.textContent = "Your configuration has been saved.";
 
     // Send Post request
     var ssid = document.getElementById('inputbox_ssid').value;
@@ -10,6 +10,6 @@ function sendData() {
     var xhr = new XMLHttpRequest();
     xhr.open("POST", "/submit", true);
     xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-    var data = "data=" + encodeURIComponent(ssid) + "&pass=" + encodeURIComponent(pass);
+    var data = "ssid=" + encodeURIComponent(ssid) + "&pass=" + encodeURIComponent(pass);
     xhr.send(data);
 }

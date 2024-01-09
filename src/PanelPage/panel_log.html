@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Log</title>
+        <link rel="icon" type="image/x-icon" href="favicon.ico">
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="css/panel_log.css" type="text/css"/>
+    </head>
+    <body>
+        <div id="sidebar">
+            <img id="logo" src="images/logo.png"><br>
+            <a class="link-text" href="#" onclick="">Add sensor to group</a>
+            <div class="option-text-bar"></div>
+
+            <a class="link-text" href="#" onclick="">Settings</a>
+            <div class="option-text-bar"></div>
+        </div>
+
+        <div id="topbar">
+            <div class="topbar-option-splitter"></div>
+            <a class="link-text" href="panel_home.html">Hjem</a>
+
+            <div class="topbar-option-splitter"></div>
+            <a class="link-text" href="panel_log.html">Log</a>
+
+            <div class="topbar-option-splitter"></div>
+            <a class="link-text" href="panel_usage.html">Forbrugsoplysninger</a>
+            <div class="topbar-option-splitter"></div>
+
+            <h2 id="logged-account">Logged in as: </h2>
+        </div>
+
+        <div id="main-window">
+            <div id="log-wnd">
+                <h2 id="header-text">Information Log</h2>
+                <div id="log-wnd-content"></div>
+                <div id="log-wnd-footer">
+                    <div id="prev_page" class="page-pointer">&lt;</div>
+                    <p id="page-nmb">Page 1 of x</p>
+                    <div id="next-page" class="page-pointer">&gt;</div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
