@@ -206,4 +206,3 @@ def sensorConnection():
     
     connect_to_wifi = ConnectHandler(ssid_value, pass_value)
     return connect_to_wifi.activate()
-

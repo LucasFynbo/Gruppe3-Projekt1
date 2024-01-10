@@ -18,10 +18,12 @@ class MySocket:
         self.ssocket_addr = (srvaddr, srvport)
 
     def send_data(self):
-        self.csocket.sendto('request device ID'.encode('utf-8'), self.ssocket_addr)
+        self.csocket.connect(self.ssocket_addr)
+        self.csocket.send('request device ID'.encode('utf-8'))
 
         device_id = self.csocket.recv(1024).decode('utf-8')
         print(device_id)
 
 if __name__ == "__main__":
     mysocket = MySocket()
+    mysocket.send_data()
