@@ -70,7 +70,7 @@ class NetworkCom:
         self.srv_socket.listen(backlog)
 
     def accept_connection(self):
-        client_socket, client_addr = self.srv_socket.accept()
+        client_socket = self.srv_socket.accept()
 
         try:
             self.handle_client(client_socket)
@@ -84,14 +84,14 @@ class NetworkCom:
         print(client_data)
 
         try:
-            # Assuming the data is a JSON string
             data_dict = json.loads(client_data)
             message_type = data_dict.get('data', '')
 
             if message_type == 'device ID request':
                 device_id = id_gen()
-                client_socket.send(device_id.encode('utf-8'))
-
+                response_data = {'device_id': device_id}
+                client_socket.send(json.dumps(response_data).encode('utf-8'))
+                
             elif message_type == 'recording data':
                 temp_pipe = data_dict.get('temp_pipe', '')
                 temp_room = data_dict.get('temp_room', '')
