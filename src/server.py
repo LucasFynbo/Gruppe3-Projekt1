@@ -1,11 +1,11 @@
 import string, random
 import mysql.connector # MySQL database connection module
-import socket
+import socket, ast
 import errno
 import time
 
 db = mysql.connector.connect(
-    host="79.171.148.173",
+    host="127.0.0.1",
     user="mikkeladmin",
     passwd="mikkeladmin",
     database="tempsensorweb"
@@ -15,35 +15,37 @@ mycursor = db.cursor()
 # Generate random device id, 
 def id_gen():
 
-        success = 0
+    success = 0
 
-        while 0 == success:
-            # String generation
-            letters = string.ascii_letters + string.digits
-            kode = ''.join(random.choice(letters) for i in range(8))
-            rtal = ''.join(random.choice(string.digits) for _ in range(5))
-            device_id = ('Device#' + rtal)
-            print(device_id)
-            pw = kode
-            print(kode)
+    while 0 == success:
+        # String generation
+        letters = string.ascii_letters + string.digits
+        pw = ''.join(random.choice(letters) for i in range(8))
+        rtal = ''.join(random.choice(string.digits) for _ in range(5))
+        device_id = ('Device#' + rtal)
+        print(f'device_id: {device_id} \npasswd: {pw}')
 
-            # Tjek MySQL db
-            mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
-            result = mycursor.fetchone()
+        # Tjek MySQL db
+        mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
+        result = mycursor.fetchone()
 
-            if result is None:
-                # Input generated string i MySQL db
-                try:
-                    mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
-                    db.commit()
+        if result is None:
+            # Input generated string i MySQL db
+            try:
+                mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
+                db.commit()
 
-                    print('[+] Device ID successfully generated: %s' % device_id)
-                    success = 1
-                    return device_id
-                except Exception as e:
-                    print('[!] Encountered exception error: %s' % e)
-            else:
-                print('[!] Device ID already exist in the database, retrying...')
+                print('[+] Device ID successfully generated: %s' % device_id)
+                success = 1
+                return device_id
+            except Exception as e:
+                print('[!] Encountered exception error: %s' % e)
+        else:
+            print('[!] Device ID already exist in the database, retrying...')
+
+# Modtager af målingsdata fra vandspildsmåleren
+def rdata_recv(device_id = "Error", temp_pipe = "Error", temp_room = "Error"):
+    return
 
 class NetworkCom:
     def __init__(self) -> None:
@@ -77,12 +79,26 @@ class NetworkCom:
             client_socket.close()
 
     def handle_client(self, client_socket):
-        request = client_socket.recv(1024).decode('utf8')
+        client_data = client_socket.recv(1024).decode('utf8')
 
-        if 'request device ID' in request:
-            device_id: str = id_gen()
+        match(client_data):
+            case 'request device ID':
+                device_id: str = id_gen()
+                client_socket.send(device_id.encode('utf-8'))
+            case 'recording data':
+                try:
+                    data_dict = ast.literal_eval(client_data.split('recording data ')[1])
+                    print(data_dict)
+                    
+                    # Accessing keys and values
+                    for key, value in data_dict.items():
+                        print(f"Key: {key}, Value: {value}")
 
-            client_socket.send(device_id.encode('utf-8'))
+                except (SyntaxError, ValueError) as e:
+                    print(f"Error parsing the data: {e}")
+
+            case _:
+                pass
 
         client_socket.close()
 
