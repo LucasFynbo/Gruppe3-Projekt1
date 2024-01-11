@@ -57,8 +57,8 @@ class MySocket:
         
     def send_data(self, type=None):
         
-        if 'device id' == type:
-            self.connect_to_server()
+        if 'device ID request' == type:
+            self.connect_to_srv()
             data_packet = {'data': f'{type}'}
             self.csocket.send(json.dumps(data_packet).encode('utf-8'))
             
@@ -67,7 +67,7 @@ class MySocket:
             self.device_id = response_dict.get('device_id', '')
             print(self.device_id)
 
-        elif 'send recording' == type:
+        elif 'recording data' == type:
             data_packet = {'data': f'{type}', 'temp_pipe': f'{self.temp_pipe}', 'temp_room': f'{self.temp_room}'}
             self.csocket.send(json.dumps(data_packet).encode('utf-8'))
         else:
@@ -81,6 +81,11 @@ if __name__ == "__main__":
         joystick = JoystickController(y_axis_pin, x_axis_pin)
         joystick.start()
         mysocket.send_data(type='recording data')
+
+    
+
+
+
 
     
 
