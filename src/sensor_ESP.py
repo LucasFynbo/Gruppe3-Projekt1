@@ -58,7 +58,7 @@ class MySocket:
     def send_data(self, type=None):
         
         if 'device id' == type:
-            self.connect_to_server()
+            self.connect_to_srv()
             data_packet = {'data': f'{type}'}
             self.csocket.send(json.dumps(data_packet).encode('utf-8'))
             
