@@ -24,7 +24,6 @@ def id_gen():
         pw = ''.join(random.choice(letters) for i in range(8))
         rtal = ''.join(random.choice(string.digits) for _ in range(5))
         device_id = ('Device#' + rtal)
-        print(f'device_id: {device_id} \npasswd: {pw}')
 
         # Tjek MySQL db
         mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
@@ -36,13 +35,13 @@ def id_gen():
                 mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
                 db.commit()
 
-                print('[+] Device ID successfully generated: %s' % device_id)
+                print('[+] Device ID & Password successfully generated: %s, %s' % (device_id, pw))
                 success = 1
                 return device_id
             except Exception as e:
                 print('[!] Encountered exception error: %s' % e)
         else:
-            print('[!] Device ID already exist in the database, retrying...')
+            print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
 
 # Modtager af målingsdata fra vandspildsmåleren
 def rdata_recv(device_id = "Error", temp_pipe = "Error", temp_room = "Error"):
@@ -58,7 +57,7 @@ class NetworkCom:
         
         try:
             self.srv_socket.bind((HOST, PORT))
-            print('[i] Waiting for connection...')
+            print('[i] Waiting for connection... \n\n')
         except OSError as e:
             if e.errno == errno.EADDRINUSE:
                 print('[!] Address Already in use, rebinding...')
@@ -70,39 +69,34 @@ class NetworkCom:
         self.srv_socket.listen(backlog)
 
     def accept_connection(self):
-        client_socket = self.srv_socket.accept()
+        client_socket, client_addr = self.srv_socket.accept()
 
         try:
-            self.handle_client(client_socket)
+            self.handle_client(client_socket, client_addr)
         except Exception as e:
             print('Error handeling client: %s' % e)
         finally:
             client_socket.close()
 
-    def handle_client(self, client_socket):
+    def handle_client(self, client_socket, client_addr):
         client_data = client_socket.recv(1024).decode('utf-8')
-        print(client_data)
 
-        try:
-            data_dict = json.loads(client_data)
-            message_type = data_dict.get('data', '')
+        data_dict = json.loads(client_data)
+        message_type = data_dict.get('data', '')
 
-            if message_type == 'device ID request':
-                device_id = id_gen()
-                response_data = {'device_id': device_id}
-                client_socket.send(json.dumps(response_data).encode('utf-8'))
-                
-            elif message_type == 'recording data':
-                temp_pipe = data_dict.get('temp_pipe', '')
-                temp_room = data_dict.get('temp_room', '')
-                
-                print(temp_pipe, temp_room)
+        print(f"[+] Recieved packet with type '{message_type}' from {client_addr}")
 
-            else:
-                pass
-
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON: {e}")
+        if 'device ID request' == message_type:
+            device_id = id_gen()
+            response_data = {'device_id': device_id}
+            client_socket.send(json.dumps(response_data).encode('utf-8'))
+            print("[i] Device ID successfully sent to ESP \n")
+            
+        elif 'recording data' == message_type:
+            print(f"[i] Recieved {message_type} from {client_addr}, processing...")
+            temp_pipe = data_dict.get('temp_pipe', '')
+            temp_room = data_dict.get('temp_room', '')
+            print(f"[+] Gathered variables from {client_addr}'s {message_type} packet: {temp_pipe}, {temp_room} \n")
 
         client_socket.close()
 
