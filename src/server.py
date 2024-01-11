@@ -80,18 +80,29 @@ class NetworkCom:
             client_socket.close()
 
     def handle_client(self, client_socket):
-        client_data = client_socket.recv(1024).decode('utf8')
+        client_data = client_socket.recv(1024).decode('utf-8')
         print(client_data)
 
-        match(client_data):
-            case 'request device ID':
-                device_id: str = id_gen()
-                client_socket.send(device_id.encode('utf-8'))
-            case 'recording data':
-                
+        try:
+            # Assuming the data is a JSON string
+            data_dict = json.loads(client_data)
+            message_type = data_dict.get('data', '')
 
-            case _:
+            if message_type == 'device ID request':
+                device_id = id_gen()
+                client_socket.send(device_id.encode('utf-8'))
+
+            elif message_type == 'recording data':
+                temp_pipe = data_dict.get('temp_pipe', '')
+                temp_room = data_dict.get('temp_room', '')
+                
+                print(temp_pipe, temp_room)
+
+            else:
                 pass
+
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON: {e}")
 
         client_socket.close()
 
