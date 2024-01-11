@@ -1,8 +1,9 @@
 import string, random
 import mysql.connector # MySQL database connection module
-import socket, ast
+import socket
 import errno
 import time
+import json
 
 db = mysql.connector.connect(
     host="127.0.0.1",
@@ -80,22 +81,14 @@ class NetworkCom:
 
     def handle_client(self, client_socket):
         client_data = client_socket.recv(1024).decode('utf8')
+        print(client_data)
 
         match(client_data):
             case 'request device ID':
                 device_id: str = id_gen()
                 client_socket.send(device_id.encode('utf-8'))
             case 'recording data':
-                try:
-                    data_dict = ast.literal_eval(client_data.split('recording data ')[1])
-                    print(data_dict)
-                    
-                    # Accessing keys and values
-                    for key, value in data_dict.items():
-                        print(f"Key: {key}, Value: {value}")
-
-                except (SyntaxError, ValueError) as e:
-                    print(f"Error parsing the data: {e}")
+                
 
             case _:
                 pass

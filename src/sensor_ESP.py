@@ -18,7 +18,6 @@ class MySocket:
         self.ssocket_addr = (srvaddr, srvport)
 
     def send_data(self, type = None):
-        self.csocket.connect(self.ssocket_addr)
         if 'device id' == type:
             self.csocket.send('request device ID'.encode('utf-8'))
 
@@ -27,11 +26,11 @@ class MySocket:
         elif 'send recording' == type:
             data_packet = self.craft_packet()
             self.csocket.send(data_packet.encode('utf-8'))
-
+        self.ssocket_addr.close()
     def craft_packet(self):
         # indhent x_value og y_value
 
-        packet = """recording data {
+        packet = f"""recording data {
             'device_id': %s
             'temperature_room': %d
             'temperature_pipe': %d
