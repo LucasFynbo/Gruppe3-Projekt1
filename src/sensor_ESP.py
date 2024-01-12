@@ -30,48 +30,44 @@ class JoystickController:
 class MySocket:
     def __init__(self):
         srvaddr: str = '79.171.148.173'
-        srvport: int = 13371
+        srvport_tcp: int = 13371
+        srvport_udp: int = 31337
 
-        self.ssocket_addr = (srvaddr, srvport)
-        
+        self.srvcon_tcp = (srvaddr, srvport_tcp)
+        self.srvcon_udp = (srvaddr, srvport_udp)
+
         self.joystick = JoystickController(y_axis_pin, x_axis_pin)
+        self.device_id = ""
 
-    def connect_to_srv(self):
-        csocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        csocket.connect(self.ssocket_addr)
-        return csocket
+        self.csocket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def initTCP_sock(self) -> socket:
+        csocket_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        csocket_tcp.connect(self.srvcon_tcp)
+        return csocket_tcp
         
     def send_data(self, type=None):
             try:
                 if 'device ID request' == type:
-                    self.csocket = self.connect_to_srv()
+                    csocket_tcp = self.initTCP_sock()
                     data_packet = {'data': f'{type}'}
-                    self.csocket.send(json.dumps(data_packet).encode('utf-8'))
+                    csocket_tcp.send(json.dumps(data_packet).encode('utf-8'))
 
-                    response_data = self.csocket.recv(1024).decode('utf-8')
+                    response_data = csocket_tcp.recv(1024).decode('utf-8')
                     response_dict = json.loads(response_data)
                     self.device_id = response_dict.get('device_id', '')
                     print(self.device_id)
 
-                elif 'recording data' == type:
-                    try:
-                        if self.csocket.fileno() == -1:
-                            self.csocket = self.connect_to_srv()
+                    csocket_tcp.close()
 
+                elif 'recording data' == type:
                         temperature_pipe, temperature_room = self.joystick.read_joystick()
 
                         print(temperature_pipe, temperature_room)
-                        data_packet = {'data': f'{type}', 'temp_pipe': f'{temperature_pipe}', 'temp_room': f'{temperature_room}'}
+                        data_packet = {'data': f'{type}', 'device_id': f'{self.device_id}','temp_pipe': f'{temperature_pipe}', 'temp_room': f'{temperature_room}'}
                         print(f"Sending data: {json.dumps(data_packet)}")
-                        self.csocket.send(json.dumps(data_packet).encode('utf-8'))
+                        self.csocket_udp.sendto(json.dumps(data_packet).encode('utf-8'), self.srvcon_udp)
                         print("Temperature packet sent")
-
-                    # Current erroring rate: 50%
-                    except OSError as e:
-                        print(f"Error sending recording data: {e}")
-                        if self.csocket.fileno() != -1:
-                            self.csocket.close()
-                        pass
 
             except Exception as e:
                 print(f"Unhandled exception: {e}")
