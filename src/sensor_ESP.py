@@ -3,29 +3,7 @@ import socket
 import sensor_Connection
 import time
 import ujson as json
-
-esp_ip = sensor_Connection.sensorConnection()
-
-y_axis_pin = 2
-x_axis_pin = 3
-
-class Sensor:
-    def __init__(self):
-        self.deviceid_path: str = './deviceid.txt'        
-
-class JoystickController:
-    def __init__(self, y_axis_pin, x_axis_pin):
-
-        self.y_axis_pin = y_axis_pin
-        self.x_axis_pin = x_axis_pin
-
-        self.y_axis = ADC(Pin(self.y_axis_pin, Pin.IN), atten=ADC.ATTN_11DB)
-        self.x_axis = ADC(Pin(self.x_axis_pin, Pin.IN), atten=ADC.ATTN_11DB)
-
-    def read_joystick(self):
-        y_value = self.y_axis.read()
-        x_value = self.x_axis.read()
-        return y_value, x_value
+import tcn_library
 
 class MySocket:
     def __init__(self):
@@ -36,7 +14,6 @@ class MySocket:
         self.srvcon_tcp = (srvaddr, srvport_tcp)
         self.srvcon_udp = (srvaddr, srvport_udp)
 
-        self.joystick = JoystickController(y_axis_pin, x_axis_pin)
         self.device_id = ""
 
         self.csocket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -56,16 +33,16 @@ class MySocket:
                     response_data = csocket_tcp.recv(1024).decode('utf-8')
                     response_dict = json.loads(response_data)
                     self.device_id = response_dict.get('device_id', '')
-                    print(self.device_id)
+                    print(f"[i] Device ID recieved: {self.device_id} \n")
 
                     csocket_tcp.close()
 
                 elif 'recording data' == type:
-                        temperature_pipe, temperature_room = self.joystick.read_joystick()
+                        temperature_pipe, temperature_room = tcn_library.TCN75_Read_Temp()
 
-                        print(temperature_pipe, temperature_room)
+                        print(f"[+] Read temperature: {temperature_pipe}, {temperature_room}")
                         data_packet = {'data': f'{type}', 'device_id': f'{self.device_id}','temp_pipe': f'{temperature_pipe}', 'temp_room': f'{temperature_room}'}
-                        print(f"Sending data: {json.dumps(data_packet)}")
+                        print(f"[+] Sending data: {json.dumps(data_packet)}")
                         self.csocket_udp.sendto(json.dumps(data_packet).encode('utf-8'), self.srvcon_udp)
                         print("Temperature packet sent")
 
@@ -73,6 +50,9 @@ class MySocket:
                 print(f"Unhandled exception: {e}")
                 
 if __name__ == "__main__":
+    esp_ip = sensor_Connection.sensorConnection()    
+    tcn_library.Config_TCN75_Sensitivity()
+    
     mysocket = MySocket()
     mysocket.send_data(type='device ID request')
 
