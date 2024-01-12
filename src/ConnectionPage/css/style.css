@@ -1,6 +1,6 @@
 @font-face {
     font-family: "Akira";
-    src: url(../fonts/Akira-Expanded-Demo.otf);
+    src: url(http://10.0.0.1:80/ConnectionPage/fonts/Akira-Expanded-Demo.otf);
 }
 
 body {
