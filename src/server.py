@@ -109,7 +109,7 @@ class NetworkCom:
         data_dict_tcp = json.loads(client_data_tcp)
         message_type = data_dict_tcp.get('data', '')
 
-        print(f"[+] Received packet with type '{message_type}' from {client_addr}")
+        print(f"[+] Received packet of type '{message_type}' from {client_addr}")
 
         if 'device ID request' == message_type:
             device_id = id_gen()
@@ -121,7 +121,7 @@ class NetworkCom:
         data_dict_udp = json.loads(udp_data.decode('utf-8'))
         message_type = data_dict_udp.get('data', '')
 
-        print(f"[+] Received UDP packet with type '{message_type}' from {udp_client_addr}")
+        print(f"[+] Received UDP packet of type '{message_type}' from {udp_client_addr}")
 
         if 'recording data' == message_type:
             print(f"[i] Received {message_type} from {udp_client_addr}, processing...")

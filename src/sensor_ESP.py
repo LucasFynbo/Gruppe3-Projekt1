@@ -8,15 +8,34 @@ import tcn_library
 class MySocket:
     def __init__(self):
         srvaddr: str = '79.171.148.173'
-        srvport_tcp: int = 13371
-        srvport_udp: int = 31337
+        srvport_tcp: int = 13371 # TCP for device id requesting
+        srvport_udp: int = 31337 # UDP for sending af målingsdata
 
         self.srvcon_tcp = (srvaddr, srvport_tcp)
         self.srvcon_udp = (srvaddr, srvport_udp)
 
-        self.device_id = ""
-
         self.csocket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        # Kontroller om der allerede er generet et device ID for ESP'en
+        try:
+            with open('device_id.txt', 'r') as file:
+                self.device_id = file.read()
+            # Hvis filen er tom
+            if '' == id:
+                print("[!] Device ID file empty, requesting...")
+                self.send_data(type='device ID request')
+            # Hvis Device ID'et allerede er skabt for ESP'en
+            else:
+                print(f"[+] Device ID: {self.device_id}")
+                pass
+        except OSError as e:
+            # Hvis filen ikke eksisterer
+            if errno.ENOENT == e.errno:
+                print("[!] Device ID does not exist, requesting...")
+                self.send_data(type='device ID request')
+            # Andre errors
+            else:
+                print("[!] Error: '%s' occured." % e)
 
     def initTCP_sock(self) -> socket:
         csocket_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -37,6 +56,10 @@ class MySocket:
 
                     csocket_tcp.close()
 
+                    # Gem det genereret device id til 'device_id.txt'
+                    with open('device_id.txt', 'w') as file:
+                        file.write(self.device_id)
+
                 elif 'recording data' == type:
                         temperature_pipe, temperature_room = tcn_library.TCN75_Read_Temp()
 
@@ -54,7 +77,6 @@ if __name__ == "__main__":
     tcn_library.Config_TCN75_Sensitivity()
     
     mysocket = MySocket()
-    mysocket.send_data(type='device ID request')
 
     while True:
         mysocket.send_data(type='recording data')
