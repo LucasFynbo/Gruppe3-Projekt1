@@ -5,54 +5,76 @@ import time
 import json
 import threading
 
-db = mysql.connector.connect(
-    host="127.0.0.1",
-    user="mikkeladmin",
-    passwd="mikkeladmin",
-    database="tempsensorweb"
-)
-mycursor = db.cursor()
+class DataHandler():
+    def __init__(self):
+        self.db = mysql.connector.connect(
+        host="127.0.0.1",
+        user="mikkeladmin",
+        passwd="mikkeladmin",
+        database="tempsensorweb"
+        )
+        self.mycursor = self.db.cursor()
 
-# Generate random device id, 
-def id_gen():
+    # Strips HTTP content for JSON payload
+    def http_strip(self, recv_rawdata = ""):
+        print("[+] Stripping HTTP request for JSON payload...")
+        json_start = recv_rawdata.find(b'{')
+        json_end = recv_rawdata.find(b'}') + 1
+        json_payload = recv_rawdata[json_start:json_end] if json_start != -1 and json_end != 0 else b""
 
-    success = 0
+        return json_payload
 
-    while 0 == success:
-        # String generation
-        letters = string.ascii_letters + string.digits
-        pw = ''.join(random.choice(letters) for i in range(8))
-        rtal = ''.join(random.choice(string.digits) for _ in range(5))
-        device_id = ('Device#' + rtal)
+    # Generate random device id
+    def device_generation(self):
+        success = 0
 
-        # Tjek MySQL db
-        mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
-        result = mycursor.fetchone()
+        while 0 == success:
+            # String generation
+            letters = string.ascii_letters + string.digits
+            pw = ''.join(random.choice(letters) for i in range(8))
+            rtal = ''.join(random.choice(string.digits) for _ in range(5))
+            device_id = ('Device#' + rtal)
 
-        if result is None:
-            # Input generated string i MySQL db
-            try:
-                mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
-                db.commit()
+            # Tjek MySQL db
+            self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
+            result = self.mycursor.fetchone()
 
-                print('[+] Device ID & Password successfully generated: %s, %s' % (device_id, pw))
-                success = 1
-                return device_id
-            except Exception as e:
-                print('[!] Encountered exception error: %s' % e)
-        else:
-            print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
+            if result is None:
+                # Input generated string i MySQL db
+                try:
+                    self.mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
+                    self.db.commit()
 
-# Handler af målingsdata fra vandspildsmåleren
-def rdata_handler(device_id = "Error", temp_pipe = "Error", temp_room = "Error"):
-    return
+                    print('[+] Device ID & Password successfully generated: %s, %s \n' % (device_id, pw))
+                    success = 1
+                    return device_id
+                except Exception as e:
+                    print('[!] Encountered exception error while generating device ID: %s' % e)
+            else:
+                print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
 
-class NetworkCom:
+    # Handler af målingsdata fra vandspildsmåleren
+    def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
+        try:
+            self.mycursor.execute('INSERT INTO tempreadings (device_id, temp_pipe, temp_room) VALUES (%s,%s,%s)', (device_id, temp_pipe, temp_room))
+            self.db.commit()
+
+            print('[+] Successfully added Temperature entry for %s \n' % device_id)
+        except Exception as e:
+            print('[!] Encountered exception error while adding temperature entry: %s' % e)
+
+    # Login request handler
+    def login_procedure(self, username, password):
+        print(username, password)
+
+class SocketCommunication:
     def __init__(self) -> None:
         HOST: str = '0.0.0.0' # Listen på alle IP'er assigned til serverens interfaces
         PORT_TCP: int = 13371
         PORT_UDP: int = 31337
         backlog = 5
+
+        self.handler = DataHandler()
 
         self.srv_socket_tcp = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.srv_socket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -104,19 +126,33 @@ class NetworkCom:
             except Exception as e:
                 print('Error handling UDP data: %s' % e)
 
-    def handle_tcp_client(self, client_socket, client_addr):
-        client_data_tcp = client_socket.recv(1024).decode('utf-8')
+    def handle_tcp_client(self, client_socket, client_addr="?.?.?.?"):
+        raw_data = client_socket.recv(1024)
+        print(raw_data)
+        if b'POST' in raw_data:
+            print(f"[+] HTTP POST request recieved from reverse proxy on {client_addr}")
+            raw_data = self.handler.http_strip(raw_data)
+
+        client_data_tcp = raw_data.decode('utf-8')
+
         data_dict_tcp = json.loads(client_data_tcp)
         message_type = data_dict_tcp.get('data', '')
 
         print(f"[+] Received packet of type '{message_type}' from {client_addr}")
 
+        # Call device ID generation
         if 'device ID request' == message_type:
-            device_id = id_gen()
+            device_id = self.handler.device_generation()
             response_data = {'device_id': device_id}
             client_socket.send(json.dumps(response_data).encode('utf-8'))
-            print("[i] Device ID successfully sent to ESP \n")
-
+            print("[i] Device ID successfully sent to ESP \n")        
+        elif 'login request' == message_type:
+            recv_device_id = data_dict_tcp.get('user', '')
+            recv_password = data_dict_tcp.get('pass', '')
+            self.handler.login_procedure(recv_device_id, recv_password)
+        else:
+            print("[!] Error: Unrecognized message type.")
+        
     def handle_udp_data(self, udp_data, udp_client_addr):
         data_dict_udp = json.loads(udp_data.decode('utf-8'))
         message_type = data_dict_udp.get('data', '')
@@ -130,10 +166,14 @@ class NetworkCom:
             temp_room = data_dict_udp.get('temp_room', '')
             print(f"[+] Gathered variables from {udp_client_addr}'s {message_type} packet: {device_id}, {temp_pipe}, {temp_room} \n")
 
+            self.handler.recordingdata_handler(device_id=device_id, temp_pipe=temp_pipe, temp_room=temp_room)
+        else:
+            return
+
     def close(self):
         self.srv_socket_tcp.close()
         self.srv_socket_udp.close()
 
 if __name__ == "__main__":
-    socket = NetworkCom()
-    socket.start_listening()
+    comsocket = SocketCommunication()
+    comsocket.start_listening()

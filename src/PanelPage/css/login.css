@@ -62,6 +62,11 @@ body {
     border: 3px solid #525252;
 }
 
+#inputbox_deviceid.error,
+#inputbox_password.error {
+    border: 3px solid rgb(140, 20, 20);
+}
+
 #submit-arrow {
     padding-bottom: 15px;
     cursor: pointer;
