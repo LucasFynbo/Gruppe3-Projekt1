@@ -192,7 +192,6 @@ class ConnectHandler:
             print("Already Connected. ", sta_if.ifconfig()[0])
             return sta_if.ifconfig()[0]
         
-
 def sensorConnection():
     AP = AccessPoint()
     AP.activate()

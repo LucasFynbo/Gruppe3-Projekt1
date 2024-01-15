@@ -26,7 +26,7 @@ body {
     align-items: center;
 
     width: 40vW;
-    height: 67vH;
+    height: 75vH;
     background-color: #ffffff;
     border-radius: 5%;
 
@@ -44,6 +44,7 @@ body {
 
 .inputboxes input[type="text"],
 .inputboxes input[type="password"] {
+    position: relative;
     width: 35vW;
     font-size: 25px;
     color: 525252;
@@ -65,6 +66,21 @@ body {
 #inputbox_deviceid.error,
 #inputbox_password.error {
     border: 3px solid rgb(140, 20, 20);
+}
+
+#inputbox_deviceid {
+    padding-left: 7vW;
+}
+
+.static-text {
+    display: flex;
+    right: -3.7vW;
+    top: 52px;
+    position: relative;
+    color: #525252;
+    font-size: 25px;
+    font-weight: bold;
+    z-index: 1;
 }
 
 #submit-arrow {
@@ -111,6 +127,7 @@ body {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 
     text-align: left;
+    z-index: 2;
 }
 
 #hiw_open h2,

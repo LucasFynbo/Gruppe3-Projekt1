@@ -1,9 +1,10 @@
 import string, random
 import mysql.connector # MySQL database connection module
 import socket, errno
-import time
+from datetime import datetime, timedelta
 import json
 import threading
+import secrets
 
 class DataHandler():
     def __init__(self):
@@ -14,6 +15,9 @@ class DataHandler():
         database="tempsensorweb"
         )
         self.mycursor = self.db.cursor()
+
+        self.web = WebsiteCommunication(self.db, self.mycursor)
+
 
     # Strips HTTP content for JSON payload
     def http_strip(self, recv_rawdata = ""):
@@ -65,7 +69,35 @@ class DataHandler():
 
     # Login request handler
     def login_procedure(self, username, password):
-        print(username, password)
+        device_id = ('Device#' + username)
+        self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s and passwd = %s', (device_id, password))
+        result = self.mycursor.fetchone()
+
+        if result:
+            print(f"[i] Login Successful for {device_id}. Generating session token...")
+            self.web.generate_session(device_id)
+        else:
+            print(f"[i] Login Failed for {device_id}.")
+
+class WebsiteCommunication:
+    def __init__(self, database, cursor):
+        self.db = database
+        self.mycursor = cursor
+        
+        self.time_now = datetime.now().strftime("%H%M%S") + timedelta(hours=1) # UTC+1 offset
+
+    def generate_session(self, device_id):
+        self.session_id = secrets.token_hex(16)
+        self.user_id = secrets.choice(range(10000, 99999))
+        
+        print(f"Session ID - {self.session_id}, User ID - {self.user_id}, Device ID - {device_id}, Time - {self.time_now}")
+
+        self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (self.session_id, self.user_id, device_id, self.time_now))
+        self.db.commit()
+
+    def cleanup_sessions(self):
+        return
+
 
 class SocketCommunication:
     def __init__(self) -> None:
