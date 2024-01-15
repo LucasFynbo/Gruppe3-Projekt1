@@ -74,16 +74,16 @@ function sendData() {
     })
     .then(response => {
         if (!response.ok) { // hvis response return value er false/errored
-            throw new Error('[!] Error: Response returned false');
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        return response.json();
+        return response.text();
     })
-    .then(responseData => {
+    .then(data => {
         // Håndterer svaret fra serveren her
-        console.log(responseData);
+        window.location.href = '/panel_home';
     })
     .catch(error => {
         // Håndterer fejl her
-        console.error('Fetch error:', error);
+        console.error('Error:', error);
     });
 }

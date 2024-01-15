@@ -18,6 +18,7 @@ class DataHandler():
 
         self.web = WebsiteCommunication(self.db, self.mycursor)
 
+
     # Strips HTTP content for JSON payload
     def http_strip(self, recv_rawdata = ""):
         print("[+] Stripping HTTP request for JSON payload...")
@@ -74,26 +75,60 @@ class DataHandler():
 
         if result:
             print(f"[i] Login Successful for {device_id}. Generating session token...")
-            self.web.generate_session(device_id)
+            session_id = self.web.generate_session(device_id)
+            response = self.login_response(state=1, dev_id=device_id, ses_id=session_id)
+
+            return response
         else:
             print(f"[i] Login Failed for {device_id}.")
+            response = self.login_response(state=0)
+            return response
+        
+    # Login request responder
+    def login_response(self, state=0, dev_id=None, ses_id=None):
+        if state:
+            if dev_id and ses_id:
+                set_cookie_header = f"Set-Cookie: session_id={ses_id}; username={dev_id}; HttpOnly\r\n"
+                response = "HTTP/1.1 200 OK\r\n"
+                response += set_cookie_header
+                response += "\r\n"
+                return response
+            else:
+                return self.error_response()
+        else:
+            return self.error_response()
+        
+    def error_response(self):
+        response_data = {
+            'error': 'Unauthorized: Invalid credentials'
+        }
+        response_body = json.dumps(response_data)
+
+        response = "HTTP/1.1 401 Unauthorized\r\n"
+        response += f"Content-Type: application/json\r\n"
+        response += f"Content-Length: {len(response_body)}\r\n"
+        response += "\r\n"
+        response += response_body
+
+        return response
 
 class WebsiteCommunication:
     def __init__(self, database, cursor):
         self.db = database
         self.mycursor = cursor
         
-        self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H%M%S") # UTC+1 offset
+        self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H:%M:%S") # UTC+1 offset
 
     def generate_session(self, device_id):
-        self.session_id = secrets.token_hex(16)
-        self.user_id = secrets.choice(range(10000, 99999))
+        session_id = secrets.token_hex(16)
+        user_id = secrets.choice(range(10000, 99999))
         
-        print(f"Session ID - {self.session_id}, User ID - {self.user_id}, Device ID - {device_id}, Time - {self.time_now}")
+        print(f"Session ID - {session_id}, User ID - {user_id}, Device ID - {device_id}, Time - {self.time_now}")
 
-        self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (self.session_id, self.user_id, device_id, self.time_now))
+        self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (session_id, user_id, device_id, self.time_now))
         self.db.commit()
 
+        return session_id
     def cleanup_sessions(self):
         return
 
@@ -180,7 +215,12 @@ class SocketCommunication:
         elif 'login request' == message_type:
             recv_device_id = data_dict_tcp.get('user', '')
             recv_password = data_dict_tcp.get('pass', '')
-            self.handler.login_procedure(recv_device_id, recv_password)
+            response_data = self.handler.login_procedure(recv_device_id, recv_password)
+        
+            print(f"Response data to be sent: {response_data}")
+            print(f"Client Socket and Address: {client_socket}, {client_addr}")
+
+            client_socket.send(response_data.encode('utf-8'))
         else:
             print("[!] Error: Unrecognized message type.")
         
