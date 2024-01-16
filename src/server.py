@@ -1,10 +1,10 @@
-import string, random
 import mysql.connector # MySQL database connection module
 import socket, errno
 from datetime import datetime, timedelta
 import json
 import threading
 import secrets
+import re
 
 class DataHandler():
     def __init__(self):
@@ -16,7 +16,7 @@ class DataHandler():
         )
         self.mycursor = self.db.cursor()
 
-        self.web = WebsiteCommunication(self.db, self.mycursor)
+        self.session = SessionHandler(self.db, self.mycursor)
 
     # Strips HTTP content for JSON payload
     def http_strip(self, recv_rawdata = ""):
@@ -33,9 +33,8 @@ class DataHandler():
 
         while 0 == success:
             # String generation
-            letters = string.ascii_letters + string.digits
-            pw = ''.join(random.choice(letters) for i in range(8))
-            rtal = ''.join(random.choice(string.digits) for _ in range(5))
+            pw = secrets.token_urlsafe(8)
+            rtal = secrets.choice(range(10000, 99999))
             device_id = ('Device#' + rtal)
 
             # Tjek MySQL db
@@ -65,34 +64,93 @@ class DataHandler():
             print('[+] Successfully added Temperature entry for %s \n' % device_id)
         except Exception as e:
             print('[!] Encountered exception error while adding temperature entry: %s' % e)
-
+    
     # Login request handler
     def login_procedure(self, username, password):
         device_id = ('Device#' + username)
-        self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s and passwd = %s', (device_id, password))
-        result = self.mycursor.fetchone()
 
-        if result:
-            print(f"[i] Login Successful for {device_id}. Generating session token...")
-            self.web.generate_session(device_id)
+        if self.session.authenticate(device_id, password):
+            SessionToken, UserId = self.session.GenerateSessionToken(device_id)
+            print (f"[+] Session Token for {device_id}: {SessionToken}")
+
+            self.session.storeSessionToken(device_id, SessionToken, UserId)
+ 
+            set_cookie_header = f"Set-Cookie: session_id={SessionToken}; username={device_id}; Secure; HttpOnly\r\n"
+            response = "HTTP/1.1 200 OK\r\n"
+            response += set_cookie_header
+            response += "\r\n"
+            return response
+
         else:
-            print(f"[i] Login Failed for {device_id}.")
+            response_data = {
+            'error': 'Unauthorized: Invalid credentials'
+            }
+            response_body = json.dumps(response_data)
 
-class WebsiteCommunication:
+            response = "HTTP/1.1 401 Unauthorized\r\n"
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
+            response += "\r\n"
+            response += response_body
+
+            return response
+
+    def sessionCookieAuthHandler(self, recv_rawdata):
+        return self.session.sessionCookieAuth(recv_rawdata)
+
+class SessionHandler:
     def __init__(self, database, cursor):
         self.db = database
         self.mycursor = cursor
         
-        self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H%M%S") # UTC+1 offset
+        self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H:%M:%S") # UTC+1 offset
 
-    def generate_session(self, device_id):
-        self.session_id = secrets.token_hex(16)
-        self.user_id = secrets.choice(range(10000, 99999))
-        
-        print(f"Session ID - {self.session_id}, User ID - {self.user_id}, Device ID - {device_id}, Time - {self.time_now}")
+    def authenticate(self, username, password):
+        try:
+            self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s and passwd = %s', (username, password))
+            result = self.mycursor.fetchone()
 
-        self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (self.session_id, self.user_id, device_id, self.time_now))
-        self.db.commit()
+            if result:
+                return True  # Hvis authentication gik igennem
+            else:
+                return False # Hvis der fejles i authentication
+        except Exception as e:
+            print('[!] Error in authentication: %s' % e)
+            return False
+
+    def GenerateSessionToken (self, username):
+        #Genererer en session token ved brug af secrets. token_hex
+        SessionToken = secrets.token_hex(16)
+        user_id = secrets.choice(range(10000, 99999))
+
+        print(f"Session ID - {SessionToken}, User ID - {user_id}, Device ID - {username}, Time - {self.time_now}")
+
+        return SessionToken, user_id
+
+    def storeSessionToken (self, username, SessionToken, UserId):
+            try:
+                self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (SessionToken, UserId, username, self.time_now))
+                self.db.commit()
+    
+                print ('[+] Session Token stored in the database.')
+            except Exception as e:
+                print('[!] Error storing session in the database: %s' % e)
+    
+    def sessionCookieAuth(self, recv_rawdata):
+        data = recv_rawdata.decode('utf-8')
+
+        print(f"[i] Converted raw data to str in sessionCookieAuth: {data}")
+
+        # Search for the 'Cookie:' header in the headers
+        for line in data.split('\r\n'):
+            if 'Cookie:' in line:
+                print(f"[+] Found session_id title in recieved POST")
+                cookie_value = line.split('session_id=')[1].strip()
+                print('[+] Received Cookie Value:', cookie_value)
+                return cookie_value
+
+        print('[i] Cookie header not found in the received data.')
+        return None  # or any other appropriate value
 
     def cleanup_sessions(self):
         return
@@ -159,7 +217,7 @@ class SocketCommunication:
 
     def handle_tcp_client(self, client_socket, client_addr="?.?.?.?"):
         raw_data = client_socket.recv(1024)
-        print(raw_data)
+        post_data = raw_data
         if b'POST' in raw_data:
             print(f"[+] HTTP POST request recieved from reverse proxy on {client_addr}")
             raw_data = self.handler.http_strip(raw_data)
@@ -180,7 +238,15 @@ class SocketCommunication:
         elif 'login request' == message_type:
             recv_device_id = data_dict_tcp.get('user', '')
             recv_password = data_dict_tcp.get('pass', '')
-            self.handler.login_procedure(recv_device_id, recv_password)
+            response_data = self.handler.login_procedure(recv_device_id, recv_password)
+        
+            print(f"Response data to be sent: {response_data}")
+            print(f"Client Socket and Address: {client_socket}, {client_addr}")
+
+            client_socket.send(response_data.encode('utf-8'))
+        elif 'session authorization' == message_type:
+            self.handler.sessionCookieAuthHandler(post_data)
+
         else:
             print("[!] Error: Unrecognized message type.")
         

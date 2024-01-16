@@ -83,7 +83,7 @@ class DataHandler():
             print(f"[i] Login Failed for {device_id}.")
             response = self.login_response(state=0)
             return response
-        
+
     # Login request responder
     def login_response(self, state=0, dev_id=None, ses_id=None):
         if state:
@@ -97,7 +97,7 @@ class DataHandler():
                 return self.error_response()
         else:
             return self.error_response()
-        
+
     def error_response(self):
         response_data = {
             'error': 'Unauthorized: Invalid credentials'
@@ -116,13 +116,13 @@ class WebsiteCommunication:
     def __init__(self, database, cursor):
         self.db = database
         self.mycursor = cursor
-        
+
         self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H:%M:%S") # UTC+1 offset
 
     def generate_session(self, device_id):
         session_id = secrets.token_hex(16)
         user_id = secrets.choice(range(10000, 99999))
-        
+
         print(f"Session ID - {session_id}, User ID - {user_id}, Device ID - {device_id}, Time - {self.time_now}")
 
         self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (session_id, user_id, device_id, self.time_now))
@@ -211,19 +211,19 @@ class SocketCommunication:
             device_id = self.handler.device_generation()
             response_data = {'device_id': device_id}
             client_socket.send(json.dumps(response_data).encode('utf-8'))
-            print("[i] Device ID successfully sent to ESP \n")        
+            print("[i] Device ID successfully sent to ESP \n")
         elif 'login request' == message_type:
             recv_device_id = data_dict_tcp.get('user', '')
             recv_password = data_dict_tcp.get('pass', '')
             response_data = self.handler.login_procedure(recv_device_id, recv_password)
-        
+
             print(f"Response data to be sent: {response_data}")
             print(f"Client Socket and Address: {client_socket}, {client_addr}")
 
             client_socket.send(response_data.encode('utf-8'))
         else:
             print("[!] Error: Unrecognized message type.")
-        
+
     def handle_udp_data(self, udp_data, udp_client_addr):
         data_dict_udp = json.loads(udp_data.decode('utf-8'))
         message_type = data_dict_udp.get('data', '')

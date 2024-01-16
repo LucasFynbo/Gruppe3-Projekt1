@@ -79,7 +79,7 @@ function sendData() {
         return response.text();
     })
     .then(data => {
-        // Håndterer svaret fra serveren her
+        // Continue with your logic, e.g., redirect to '/panel_home'
         window.location.href = '/panel_home';
     })
     .catch(error => {
