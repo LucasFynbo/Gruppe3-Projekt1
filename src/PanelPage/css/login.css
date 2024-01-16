@@ -17,6 +17,11 @@ body {
     margin-bottom: 30px;
 }
 
+#response-status {
+    margin: 0;
+    color: #8c1414;
+}
+
 .container {
     position: relative;
     left: 50%;
@@ -65,7 +70,7 @@ body {
 
 #inputbox_deviceid.error,
 #inputbox_password.error {
-    border: 3px solid rgb(140, 20, 20);
+    border: 3px solid #8c1414;
 }
 
 #inputbox_deviceid {

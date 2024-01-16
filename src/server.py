@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 import json
 import threading
 import secrets
-import re
 
 class DataHandler():
     def __init__(self):
@@ -69,21 +68,31 @@ class DataHandler():
     def login_procedure(self, username, password):
         device_id = ('Device#' + username)
 
-        if self.session.authenticate(device_id, password):
+        login_status = self.session.authenticate(device_id, password)
+
+        if 'AuthSucceed' == login_status:
             SessionToken, UserId = self.session.GenerateSessionToken(device_id)
             print (f"[+] Session Token for {device_id}: {SessionToken}")
 
             self.session.storeSessionToken(device_id, SessionToken, UserId)
  
             set_cookie_header = f"Set-Cookie: session_id={SessionToken}; username={device_id}; Secure; HttpOnly\r\n"
+            response_data = {
+            'status': 'Login: Credentials accepted'
+            }
+            response_body = json.dumps(response_data)
+
             response = "HTTP/1.1 200 OK\r\n"
             response += set_cookie_header
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
             response += "\r\n"
+            response += response_body
             return response
 
-        else:
+        elif 'AuthFailed':
             response_data = {
-            'error': 'Unauthorized: Invalid credentials'
+            'status': 'Error: Invalid credentials'
             }
             response_body = json.dumps(response_data)
 
@@ -92,11 +101,62 @@ class DataHandler():
             response += f"Content-Length: {len(response_body)}\r\n"
             response += "\r\n"
             response += response_body
+            return response
+        else:
+            response_data = {
+            'status': 'Error: Unknown Error'
+            }
+            response_body = json.dumps(response_data)
 
+            response = "HTTP/1.1 520 Unknown Error\r\n"
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
+            response += "\r\n"
+            response += response_body
             return response
 
     def sessionCookieAuthHandler(self, recv_rawdata):
-        return self.session.sessionCookieAuth(recv_rawdata)
+        cookieStatus, device_id = self.session.sessionCookieAuth(recv_rawdata)
+        
+        if 'AuthSucceed' == cookieStatus:
+            response_data = {
+            'status': 'Session: Authorization confirmed',
+            'username': f'{device_id}'
+            }
+            response_body = json.dumps(response_data)
+
+            response = "HTTP/1.1 200 OK\r\n"
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
+            response += "\r\n"
+            response += response_body
+            return response
+        
+        elif 'AuthFailed' == cookieStatus:
+            response_data = {
+            'status': 'Error: Session Time-out'
+            }
+            response_body = json.dumps(response_data)
+
+            response = "HTTP/1.1 440 Login Time-out\r\n"
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
+            response += "\r\n"
+            response += response_body
+            return response
+        
+        else:
+            response_data = {
+            'status': 'Error: Unknown Error'
+            }
+            response_body = json.dumps(response_data)
+
+            response = "HTTP/1.1 520 Unknown Error\r\n"
+            response += f"Content-Type: application/json\r\n"
+            response += f"Content-Length: {len(response_body)}\r\n"
+            response += "\r\n"
+            response += response_body
+            return response
 
 class SessionHandler:
     def __init__(self, database, cursor):
@@ -111,12 +171,12 @@ class SessionHandler:
             result = self.mycursor.fetchone()
 
             if result:
-                return True  # Hvis authentication gik igennem
+                return 'AuthSucceed'  # Hvis authentication gik igennem
             else:
-                return False # Hvis der fejles i authentication
+                return 'AuthFailed' # Hvis der fejles i authentication
         except Exception as e:
             print('[!] Error in authentication: %s' % e)
-            return False
+            return 'AuthOther'
 
     def GenerateSessionToken (self, username):
         #Genererer en session token ved brug af secrets. token_hex
@@ -137,20 +197,32 @@ class SessionHandler:
                 print('[!] Error storing session in the database: %s' % e)
     
     def sessionCookieAuth(self, recv_rawdata):
+        cookie_value = ""
+
         data = recv_rawdata.decode('utf-8')
 
         print(f"[i] Converted raw data to str in sessionCookieAuth: {data}")
 
-        # Search for the 'Cookie:' header in the headers
         for line in data.split('\r\n'):
             if 'Cookie:' in line:
-                print(f"[+] Found session_id title in recieved POST")
+                print(f"[+] Found session_id title in received POST")
                 cookie_value = line.split('session_id=')[1].strip()
                 print('[+] Received Cookie Value:', cookie_value)
-                return cookie_value
+                try:
+                    self.mycursor.execute('SELECT device_id FROM session WHERE session_id = %s', (cookie_value,))
+                    result = self.mycursor.fetchone()
+
+                    if result:
+                        device_id = result[0]
+                        return 'AuthSucceed', device_id  # Hvis authentication gik igennem
+                    else:
+                        return 'AuthFailed', None # Hvis der fejles i authentication
+                except Exception as e:
+                    print('[!] Error in authentication: %s' % e)
+                    return 'AuthOther', None
 
         print('[i] Cookie header not found in the received data.')
-        return None  # or any other appropriate value
+        return 'AuthOther', None
 
     def cleanup_sessions(self):
         return
@@ -240,12 +312,17 @@ class SocketCommunication:
             recv_password = data_dict_tcp.get('pass', '')
             response_data = self.handler.login_procedure(recv_device_id, recv_password)
         
-            print(f"Response data to be sent: {response_data}")
-            print(f"Client Socket and Address: {client_socket}, {client_addr}")
+            print(f"\n[+] Response data to be sent: {response_data}")
+            print(f"[+] Client Socket and Address: {client_socket}, {client_addr}\n")
 
             client_socket.send(response_data.encode('utf-8'))
         elif 'session authorization' == message_type:
-            self.handler.sessionCookieAuthHandler(post_data)
+            response_data = self.handler.sessionCookieAuthHandler(post_data)
+
+            print(f"\nResponse data to be sent: {response_data}")
+            print(f"Client Socket and Address: {client_socket}, {client_addr}\n")
+              
+            client_socket.send(response_data.encode('utf-8'))
 
         else:
             print("[!] Error: Unrecognized message type.")
