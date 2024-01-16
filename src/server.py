@@ -75,7 +75,7 @@ class DataHandler():
 
             self.session.storeSessionToken(device_id, SessionToken, UserId)
  
-            set_cookie_header = f"Set-Cookie: session_id={SessionToken}; username={device_id}; Secure; HttpOnly\r\n"
+            set_cookie_header = f"Set-Cookie: session_id={SessionToken}; Secure; HttpOnly\r\n"
             response = "HTTP/1.1 200 OK\r\n"
             response += set_cookie_header
             response += "\r\n"
