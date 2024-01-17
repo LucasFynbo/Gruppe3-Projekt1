@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import json
 import threading
 import secrets
+import bcrypt
 
 class DataHandler():
     def __init__(self):
@@ -33,6 +34,7 @@ class DataHandler():
         while 0 == success:
             # String generation
             pw = secrets.token_urlsafe(8)
+            hashPass = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
             rtal = secrets.choice(range(10000, 99999))
             device_id = ('Device#' + rtal)
 
@@ -41,9 +43,9 @@ class DataHandler():
             result = self.mycursor.fetchone()
 
             if result is None:
-                # Input generated string i MySQL db
+                # Input generated string i MySQL 
                 try:
-                    self.mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
+                    self.mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, hashPass))
                     self.db.commit()
 
                     print('[+] Device ID & Password successfully generated: %s, %s \n' % (device_id, pw))
@@ -167,10 +169,10 @@ class SessionHandler:
 
     def authenticate(self, username, password):
         try:
-            self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s and passwd = %s', (username, password))
+            self.mycursor.execute('SELECT deviceId, passwd FROM device_id WHERE deviceId = %s' (username,))
             result = self.mycursor.fetchone()
 
-            if result:
+            if result and bcrypt.checkpw(password.encode('utf-8'), result[1].encode('utf-8')): 
                 return 'AuthSucceed'  # Hvis authentication gik igennem
             else:
                 return 'AuthFailed' # Hvis der fejles i authentication
