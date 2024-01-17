@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Add a click event listener to the element with ID 'submit-arrow'
     document.getElementById('submit-arrow').addEventListener('click', sendData);
 });
 
@@ -38,17 +37,25 @@ function sendData() {
     var deviceID = document.getElementById('inputbox_deviceid').value;
     var password = document.getElementById('inputbox_password').value;
     
+    const responseStatusText = document.querySelector("#response-status");
+
     // Tjek om de er tomme inden vi sender dataen til serveren
     if (deviceID.trim() === '') {
         document.getElementById('inputbox_deviceid').classList.add('error');
+        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
+
     } else {
         document.getElementById('inputbox_deviceid').classList.remove('error');
+        responseStatusText.textContent = "";
     }
 
     if (password.trim() === '') {
         document.getElementById('inputbox_password').classList.add('error');
+        const responseStatusText = document.querySelector("#response-status");
+        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
     } else {
         document.getElementById('inputbox_password').classList.remove('error');
+        responseStatusText.textContent = "";
     }
 
     if (deviceID.trim() === '' || password.trim() === '') {
@@ -73,14 +80,27 @@ function sendData() {
     
     })
     .then(response => {
-        if (!response.ok) { // hvis response return value er false/errored
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return response.text();
+        return response.json();
     })
     .then(data => {
-        // Continue with your logic, e.g., redirect to '/panel_home'
-        window.location.href = '/panel_home';
+        const responseStatusText = document.querySelector("#response-status");
+
+        if (data.status === 'Login: Credentials accepted') {
+            console.log('200 OK; login authenticated');
+            window.location.href = '/panel_home';
+        } else if (data.status === 'Error: Invalid credentials') {
+            document.getElementById('inputbox_deviceid').classList.add('error');
+            document.getElementById('inputbox_password').classList.add('error');
+
+            responseStatusText.textContent = "You have entered an invalid username or password";
+
+            throw new Error("HTTP error; 401 Unauthorized; Invalid credentials");
+        } else {
+            console.log('520 Unknown; Unknown error occurred');
+            responseStatusText.textContent = "An unknown error occured. Please fill out the 'contact us' form for assistance";
+            
+            throw new Error("HTTP error; 520 Unknown; Unknown error occurred");
+        }
     })
     .catch(error => {
         // Håndterer fejl her

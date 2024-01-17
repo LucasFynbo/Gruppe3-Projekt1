@@ -13,20 +13,31 @@ function sendData() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(senddata)
-
     })
     .then(response => {
-        if (!response.ok) { // hvis response return value er false/errored
+        if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
         }
-        return response.text();
+        return response.json();
     })
     .then(data => {
-        // Håndterer svaret fra serveren her
-        console.log(data)
+        console.log('Response from server:', data);
+
+        if (data.status === 'Session: Authorization confirmed') {
+            console.log('200 OK session authorized.');
+            
+            // Show the body once the script completes
+            document.body.style.display = 'flex';
+
+            const loggedInAs = document.querySelector("#username");
+            loggedInAs.textContent = `${data.username}`;
+        } else {
+            console.error('Error:', data.status);
+            window.location.href = '/login';
+        }
     })
     .catch(error => {
-        // Håndterer fejl her
         console.error('Error:', error);
+        window.location.href = '/login';
     });
 }
