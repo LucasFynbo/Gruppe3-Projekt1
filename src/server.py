@@ -160,7 +160,7 @@ class DataHandler():
             return response
     
     def keepAliveSession(self, recv_rawdata):
-        sessionToken = self.session.getCookieID(self, recv_rawdata)
+        sessionToken = self.session.getCookieID(recv_rawdata)
         self.session.extend_session(sessionToken)
 
     def cleanupLoop(self):
@@ -201,7 +201,8 @@ class SessionHandler:
 
     def storeSessionToken (self, username, SessionToken, UserId):
             try:
-                self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (SessionToken, UserId, username, self.getCurrentTime()))
+                current_time_str = self.getCurrentTime()
+                self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (SessionToken, UserId, username, current_time_str))
                 self.db.commit()
     
                 print ('[+] Session Token stored in the database.')
@@ -217,6 +218,7 @@ class SessionHandler:
 
             if result:
                 device_id = result[0]
+                self.extend_session(cookie_value)
                 return 'AuthSucceed', device_id  # Hvis authentication gik igennem
             else:
                 return 'AuthFailed', None # Hvis der fejles i authentication
@@ -259,17 +261,22 @@ class SessionHandler:
     def cleanup_session(self):
         try:
             # Hent alle sessions fra databasen
-            self.mycursor.execute('SELECT * FROM session')
+            self.mycursor.execute('SELECT session_id, last_activity FROM session')
             sessions = self.mycursor.fetchall()
 
+            print(f"Retrived sessions: {sessions}")
+
             for session in sessions:
-                last_activity_time = session['last_activity']
-                last_activity_datetime = datetime.strptime(last_activity_time, "%H:%M:%S")
-                current_datetime = self.getCurrentTime()
-                time_difference = (current_datetime - last_activity_datetime).total_seconds()
+                session_id, last_activity_time = session
+
+                last_activity_time = datetime.strptime(str(last_activity_time), "%H:%M:%S")
+                print(f"last_activity_time: {last_activity_time}")
+                current_datetime = datetime.strptime(str(self.getCurrentTime()), "%H:%M:%S")
+                print(f"current_datetime: {current_datetime}")
+                time_difference = (current_datetime - last_activity_time).total_seconds()
+                print(f"time_difference: {time_difference}")
 
                 if time_difference > 40: # Session ældrer end 40 sekunder, drop it.
-                    session_id = session['session_id']
                     self.mycursor.execute('DELETE FROM session WHERE session_id = %s', (session_id,))
                     self.db.commit()
                     print(f"[i] Dropped inactive session: {session_id}")
@@ -312,7 +319,7 @@ class SocketCommunication:
     def start_listening(self):
             tcp_thread = threading.Thread(target=self.accept_tcp_connections)
             udp_thread = threading.Thread(target=self.accept_udp_connections)
-            cleanup_thread = threading.Thread(target=self.handler.cleanupLoop())
+            cleanup_thread = threading.Thread(target=self.handler.cleanupLoop)
 
             tcp_thread.start()
             udp_thread.start()
