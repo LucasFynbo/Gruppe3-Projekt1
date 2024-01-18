@@ -8,6 +8,7 @@
         <link rel="stylesheet" href="css/panel_home.css" type="text/css"/>
 
         <script defer src="script/check.js"></script>
+        <script defer src="script/keep-alive.js"></script>
     </head>
     <body>
         <div id="sidebar">
@@ -25,9 +26,6 @@
 
             <div class="topbar-option-splitter"></div>
             <a class="link-text" href="panel_log.html">Log</a>
-
-            <div class="topbar-option-splitter"></div>
-            <a class="link-text" href="panel_usage.html">Forbrugsoplysninger</a>
             <div class="topbar-option-splitter"></div>
 
             <h2 id="logged-account">Logged in as: <span id="username"></span></h2>
@@ -35,7 +33,7 @@
 
         <div id="main-window">
             <div id="activity-wnd">
-                <h2>Activity <span class="time-period">(24)</span></h2>
+                <h2>Activity <span class="time-period">(24h)</span></h2>
                 <div id="diagram"></div>
             </div>
             <div id="container-dash">

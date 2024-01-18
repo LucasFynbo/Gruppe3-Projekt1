@@ -1,9 +1,11 @@
+import bcrypt
 import mysql.connector # MySQL database connection module
 import socket, errno
 from datetime import datetime, timedelta
 import json
 import threading
 import secrets
+import time
 
 class DataHandler():
     def __init__(self):
@@ -33,6 +35,7 @@ class DataHandler():
         while 0 == success:
             # String generation
             pw = secrets.token_urlsafe(8)
+            hashPass = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
             rtal = secrets.choice(range(10000, 99999))
             device_id = ('Device#' + rtal)
 
@@ -41,9 +44,9 @@ class DataHandler():
             result = self.mycursor.fetchone()
 
             if result is None:
-                # Input generated string i MySQL db
+                # Input generated string i MySQL 
                 try:
-                    self.mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, pw))
+                    self.mycursor.execute('INSERT INTO device_id (deviceId, passwd) VALUES (%s,%s)', (device_id, hashPass))
                     self.db.commit()
 
                     print('[+] Device ID & Password successfully generated: %s, %s \n' % (device_id, pw))
@@ -157,20 +160,31 @@ class DataHandler():
             response += "\r\n"
             response += response_body
             return response
+    
+    def keepAliveSession(self, recv_rawdata):
+        sessionToken = self.session.getCookieID(recv_rawdata)
+        self.session.extend_session(sessionToken)
+
+    def cleanupLoop(self):
+        while True:
+            self.session.cleanup_session()
+            time.sleep(40)
 
 class SessionHandler:
     def __init__(self, database, cursor):
         self.db = database
         self.mycursor = cursor
-        
-        self.time_now = (datetime.now() + timedelta(hours=1)).strftime("%H:%M:%S") # UTC+1 offset
+
+    def getCurrentTime(self):
+        # UTC+1
+        return (datetime.now() + timedelta(hours=1)).strftime("%H:%M:%S")
 
     def authenticate(self, username, password):
         try:
-            self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s and passwd = %s', (username, password))
+            self.mycursor.execute('SELECT deviceId, passwd FROM device_id WHERE deviceId = %s' (username,))
             result = self.mycursor.fetchone()
 
-            if result:
+            if result and bcrypt.checkpw(password.encode('utf-8'), result[1].encode('utf-8')): 
                 return 'AuthSucceed'  # Hvis authentication gik igennem
             else:
                 return 'AuthFailed' # Hvis der fejles i authentication
@@ -183,13 +197,14 @@ class SessionHandler:
         SessionToken = secrets.token_hex(16)
         user_id = secrets.choice(range(10000, 99999))
 
-        print(f"Session ID - {SessionToken}, User ID - {user_id}, Device ID - {username}, Time - {self.time_now}")
+        print(f"Session ID - {SessionToken}, User ID - {user_id}, Device ID - {username}, Time - {self.getCurrentTime()}")
 
         return SessionToken, user_id
 
     def storeSessionToken (self, username, SessionToken, UserId):
             try:
-                self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (SessionToken, UserId, username, self.time_now))
+                current_time_str = self.getCurrentTime()
+                self.mycursor.execute('INSERT INTO session (session_id, user_id, device_id, last_activity) VALUES (%s,%s,%s,%s)', (SessionToken, UserId, username, current_time_str))
                 self.db.commit()
     
                 print ('[+] Session Token stored in the database.')
@@ -197,6 +212,23 @@ class SessionHandler:
                 print('[!] Error storing session in the database: %s' % e)
     
     def sessionCookieAuth(self, recv_rawdata):
+        cookie_value = self.getCookieID(recv_rawdata)
+
+        try:
+            self.mycursor.execute('SELECT device_id FROM session WHERE session_id = %s', (cookie_value,))
+            result = self.mycursor.fetchone()
+
+            if result:
+                device_id = result[0]
+                self.extend_session(cookie_value)
+                return 'AuthSucceed', device_id  # Hvis authentication gik igennem
+            else:
+                return 'AuthFailed', None # Hvis der fejles i authentication
+        except Exception as e:
+            print('[!] Error in authentication: %s' % e)
+            return 'AuthOther', None
+
+    def getCookieID(self, recv_rawdata):
         cookie_value = ""
 
         data = recv_rawdata.decode('utf-8')
@@ -208,24 +240,52 @@ class SessionHandler:
                 print(f"[+] Found session_id title in received POST")
                 cookie_value = line.split('session_id=')[1].strip()
                 print('[+] Received Cookie Value:', cookie_value)
-                try:
-                    self.mycursor.execute('SELECT device_id FROM session WHERE session_id = %s', (cookie_value,))
-                    result = self.mycursor.fetchone()
+                return cookie_value
 
-                    if result:
-                        device_id = result[0]
-                        return 'AuthSucceed', device_id  # Hvis authentication gik igennem
-                    else:
-                        return 'AuthFailed', None # Hvis der fejles i authentication
-                except Exception as e:
-                    print('[!] Error in authentication: %s' % e)
-                    return 'AuthOther', None
+    def extend_session(self, SessionToken):
+        print(f"\n[+] Extending session for: {SessionToken}")
+        try:
+            self.mycursor.execute('SELECT * FROM session WHERE session_id = %s', (SessionToken,))
+            result = self.mycursor.fetchone()
 
-        print('[i] Cookie header not found in the received data.')
-        return 'AuthOther', None
+            if result:
+                # modify/update session table's "last_activity" column where the session_id column is the value of "SessionToken". 
+                # The last_activity column need to be updated with time value with "self.time_now"
+                self.mycursor.execute('UPDATE session SET last_activity = %s WHERE session_id = %s', (self.getCurrentTime(), SessionToken))
+                self.db.commit()
+                return True
+            else:
+                return False  
+        except Exception as e:
+            print('[!] Error in extending session: %s' % e)
+            return False
 
-    def cleanup_sessions(self):
-        return
+    def cleanup_session(self):
+        try:
+            # Hent alle sessions fra databasen
+            self.mycursor.execute('SELECT session_id, last_activity FROM session')
+            sessions = self.mycursor.fetchall()
+
+            print(f"Retrived sessions: {sessions}")
+
+            for session in sessions:
+                session_id, last_activity_time = session
+
+                last_activity_time = datetime.strptime(str(last_activity_time), "%H:%M:%S")
+                print(f"last_activity_time: {last_activity_time}")
+                current_datetime = datetime.strptime(str(self.getCurrentTime()), "%H:%M:%S")
+                print(f"current_datetime: {current_datetime}")
+                time_difference = (current_datetime - last_activity_time).total_seconds()
+                print(f"time_difference: {time_difference}")
+
+                if time_difference > 40: # Session ældrer end 40 sekunder, drop it.
+                    self.mycursor.execute('DELETE FROM session WHERE session_id = %s', (session_id,))
+                    self.db.commit()
+                    print(f"[i] Dropped inactive session: {session_id}")
+
+        except Exception as e:
+            print('[!] Error in session cleanup: %s' % e)
+            print(f"[i] Cleanup of session failed")
 
 
 class SocketCommunication:
@@ -261,12 +321,15 @@ class SocketCommunication:
     def start_listening(self):
             tcp_thread = threading.Thread(target=self.accept_tcp_connections)
             udp_thread = threading.Thread(target=self.accept_udp_connections)
+            cleanup_thread = threading.Thread(target=self.handler.cleanupLoop)
 
             tcp_thread.start()
             udp_thread.start()
+            cleanup_thread.start()
 
             tcp_thread.join()
             udp_thread.join()
+            cleanup_thread.join()
 
     def accept_tcp_connections(self):
             while True:
@@ -323,6 +386,9 @@ class SocketCommunication:
             print(f"Client Socket and Address: {client_socket}, {client_addr}\n")
               
             client_socket.send(response_data.encode('utf-8'))
+
+        elif 'session keep-alive' == message_type:
+            self.handler.keepAliveSession(post_data)
 
         else:
             print("[!] Error: Unrecognized message type.")
