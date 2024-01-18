@@ -9,6 +9,7 @@
 
         <script defer src="script/check.js"></script>
         <script defer src="script/keep-alive.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     </head>
     <body>
         <div id="sidebar">
@@ -34,7 +35,9 @@
         <div id="main-window">
             <div id="activity-wnd">
                 <h2>Activity <span class="time-period">(24h)</span></h2>
-                <div id="diagram"></div>
+                <div>
+                    <canvas id="activity-chart"></canvas>
+                </div>
             </div>
             <div id="container-dash">
                 <div id="information-wnd">
@@ -47,5 +50,6 @@
                 </div>
             </div>
         </div>
+        <script src="script/graph.js"></script>
     </body>
 </html>
