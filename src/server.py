@@ -51,7 +51,7 @@ class DataHandler():
 
                     print('[+] Device ID & Password successfully generated: %s, %s \n' % (device_id, pw))
                     success = 1
-                    return device_id
+                    return device_id, pw
                 except Exception as e:
                     print('[!] Encountered exception error while generating device ID: %s' % e)
             else:
@@ -366,8 +366,8 @@ class SocketCommunication:
 
         # Call device ID generation
         if 'device ID request' == message_type:
-            device_id = self.handler.device_generation()
-            response_data = {'device_id': device_id}
+            device_id, pw = self.handler.device_generation()
+            response_data = {'device_id': device_id, 'Password': pw}
             client_socket.send(json.dumps(response_data).encode('utf-8'))
             print("[i] Device ID successfully sent to ESP \n")        
         elif 'login request' == message_type:

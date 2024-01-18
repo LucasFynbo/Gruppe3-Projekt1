@@ -52,13 +52,15 @@ class MySocket:
                     response_data = csocket_tcp.recv(1024).decode('utf-8')
                     response_dict = json.loads(response_data)
                     self.device_id = response_dict.get('device_id', '')
+                    self.password = response_dict.get('password', '')
                     print(f"[i] Device ID recieved: {self.device_id} \n")
+                    print (f"[i] Password recieved: {self.password} \n")
 
                     csocket_tcp.close()
 
-                    # Gem det genereret device id til 'device_id.txt'
+                    # Gem det genereret device id og password til 'device_id.txt'
                     with open('device_id.txt', 'w') as file:
-                        file.write(self.device_id)
+                        file.write(self.device_id, self.password)
 
                 elif 'recording data' == type:
                         temperature_pipe, temperature_room = tcn_library.TCN75_Read_Temp()
