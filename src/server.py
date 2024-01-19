@@ -56,6 +56,40 @@ class DataHandler():
                     print('[!] Encountered exception error while generating device ID: %s' % e)
             else:
                 print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
+        
+# Alarmsystem funktion
+    def alarmSystem(self): 
+        while True: 
+            try:
+                avgDif = self.calcAvgtempDif()
+
+                alarmThreshold = 3 #Tolerancen for temperatur forskel
+
+                if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
+                    self.triggerAlarm(avgDif)
+
+                time.sleep (60 * 60)
+            except Exception as e:
+                print ('[!] Error in temperature monitoring: %s' % e)
+
+#Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
+    def calcAvgtempDif(self):
+        currentTime = self.session.getCurrentTime()
+        try: 
+            self.mycursor.execute('SELECT temp_pipe FROM tempreadings WHERE timestamp >= %s - INTERVAL 24 HOUR', currentTime,)
+            readings = self.mycursor.fetchall()
+
+        #Udregn selve gennemsnitstemperaturen
+            #Tjekker om der er nok målinger til udregningen
+            if not readings or len(readings) < 2:
+                return 0.0 
+            
+            tempDifs = [readings[i][0] - readings [i - 1][0] for i in range (1, len (readings))]
+            avgDiff = sum (tempDifs) / len (tempDifs)
+            return avgDiff
+        except Exception as e:
+            print ('[!] Error in calculating average temperature difference: %s' % e)
+            return 0.0
 
     # Handler af målingsdata fra vandspildsmåleren
     def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
