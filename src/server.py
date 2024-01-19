@@ -37,7 +37,7 @@ class DataHandler():
             pw = secrets.token_urlsafe(8)
             hashPass = bcrypt.hashpw(pw.encode('utf-8'), bcrypt.gensalt())
             rtal = secrets.choice(range(10000, 99999))
-            device_id = ('Device#' + rtal)
+            device_id = ('Device#' + str(rtal))
 
             # Tjek MySQL db
             self.mycursor.execute('SELECT * FROM device_id WHERE deviceId = %s', (device_id,))
@@ -181,7 +181,7 @@ class SessionHandler:
 
     def authenticate(self, username, password):
         try:
-            self.mycursor.execute('SELECT deviceId, passwd FROM device_id WHERE deviceId = %s' (username,))
+            self.mycursor.execute('SELECT deviceId, passwd FROM device_id WHERE deviceId = %s', (username,))
             result = self.mycursor.fetchone()
 
             if result and bcrypt.checkpw(password.encode('utf-8'), result[1].encode('utf-8')): 
@@ -367,7 +367,8 @@ class SocketCommunication:
         # Call device ID generation
         if 'device ID request' == message_type:
             device_id, pw = self.handler.device_generation()
-            response_data = {'device_id': device_id, 'Password': pw}
+            response_data = {'device_id': f'{device_id}', 'password': f'{pw}'}
+            print(f"Response data: {response_data}")
             client_socket.send(json.dumps(response_data).encode('utf-8'))
             print("[i] Device ID successfully sent to ESP \n")        
         elif 'login request' == message_type:
