@@ -212,17 +212,6 @@ body {
     transform: rotate(-45deg) translate(7.3px, 0px);
 }
 
-.static-text {
-    display: flex;
-    right: -3.7vW;
-    top: 52px;
-    position: relative;
-    color: #525252;
-    font-size: 25px;
-    font-weight: bold;
-    z-index: 1;
-}
-
 #addsensor-menu_open,
 #settingsmenu_open {
     display: none;
@@ -250,7 +239,7 @@ body {
 #inputbox_password {
     width: 15vW;
     font-size: 20px;
-    padding: 12px 20px;
+    padding: 12px 8px;
     margin: 1px 0;
     box-sizing: border-box;
     border: 3px solid #cecece;
@@ -259,6 +248,21 @@ body {
     outline: none;
     border-radius: 15px;
     color: #525252;
+}
+
+.static-text {
+    display: flex;
+    right: -8px;
+    top: 42px;
+    position: relative;
+    color: #525252;
+    font-size: 25px;
+    font-weight: bold;
+    z-index: 1;
+}
+
+#inputbox_deviceid {
+    padding-left: 5.5vW;
 }
 
 #inputbox_deviceid.error,

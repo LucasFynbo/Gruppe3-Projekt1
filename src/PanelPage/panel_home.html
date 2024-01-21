@@ -7,12 +7,12 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="css/panel_home.css" type="text/css"/>
 
-        <!-- <script defer src="script/check.js"></script> -->
+        <script defer src="script/check_dashboard.js"></script>
         <script defer src="script/keep-alive.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script defer src="script/group.js"></script>
     </head>
-    <body style="display: flex;">
+    <body>
         <div id="sidebar">
             <img id="logo" src="images/logo.png"><br>
             <a class="link-text" id="sb-addsensor-group-btn">Add sensor to group</a>
@@ -28,7 +28,7 @@
                     <div class="bar"></div>
                 </div>
                 <h2>Add sensor to group</h2>
-                <input type="text" placeholder="Device ID" id="inputbox_deviceid" required>
+                <label for="inputbox_deviceid" class="static-text">Device#</label><input type="text" placeholder="Device ID" id="inputbox_deviceid" required>
                 <input type="password" placeholder="Password" id="inputbox_password" required>
                 <div id="submit-btn">Submit</div>
             </div>
@@ -67,20 +67,7 @@
                 </div>
                 <div id="group-wnd">
                     <h2>Groups</h2>
-                    <div class="group-content">
-                        <div id="device-full-group-line-1" class="full-group-line">
-                            <div id="line-1-group-row1" class="row1-group-line">
-                                <h3 id="defined-name">dev_ID default; User defined</h3>
-                                <div id="line-1-option-btn" class="group-option-btn">
-                                    <img id="rename-btn" src="images/rename.png">
-                                    <img id="delete-btn" src="images/delete.png">
-                                </div>
-                            </div>
-                            <div id="line-1-group-row2" class="row2-group-line">
-                                <p class="device-id-group-txt">Device ID: <span id="line-1-device-id-inserted" class="device-id-inserted">DeviceID#70540</span></p>
-                            </div>
-                        </div>
-                    </div>
+                    
                 </div>
             </div>
         </div>

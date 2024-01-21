@@ -30,28 +30,23 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('submit-btn').addEventListener('click', addSensorGroup);
 });
 
-// Add to group function
-function addSensorGroup {
+// Add sensor to group funktion
+function addSensorGroup() {
     var deviceID = document.getElementById('inputbox_deviceid').value;
     var password = document.getElementById('inputbox_password').value;
 
     // Tjek om de er tomme inden vi sender dataen til serveren
     if (deviceID.trim() === '') {
         document.getElementById('inputbox_deviceid').classList.add('error');
-        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
 
     } else {
         document.getElementById('inputbox_deviceid').classList.remove('error');
-        responseStatusText.textContent = "";
     }
 
     if (password.trim() === '') {
         document.getElementById('inputbox_password').classList.add('error');
-        const responseStatusText = document.querySelector("#response-status");
-        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
     } else {
         document.getElementById('inputbox_password').classList.remove('error');
-        responseStatusText.textContent = "";
     }
 
     if (deviceID.trim() === '' || password.trim() === '') {
@@ -60,9 +55,43 @@ function addSensorGroup {
     }
 
     var senddata = {
-        data: 'sensor ',
+        data: 'add sensor request',
         user: deviceID,
         pass: password
     };
+
+    console.log('JSON data to be sent:', JSON.stringify(senddata));
+
+    fetch('https://waw.sof60.dk/api', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(senddata)
+    
+    })
+    .then(response => {
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'Sensor: Add request succeeded') {
+            console.log('200 OK; login authenticated');
+            window.location.href = '/panel_home';
+
+        } else if (data.status === 'Sensor: Invalid credentials') {
+            document.getElementById('inputbox_deviceid').classList.add('error');
+            document.getElementById('inputbox_password').classList.add('error');
+
+            throw new Error("HTTP error; 401 Unauthorized; Invalid credentials");
+        } else {
+            console.log('520 Unknown; Unknown error occurred');
+            
+            throw new Error("HTTP error; 520 Unknown; Unknown error occurred");
+        }
+    })
+    .catch(error => {
+        // Håndterer fejl her
+        console.error('Error:', error);
+    });
     
 }
