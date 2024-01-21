@@ -25,7 +25,7 @@ class DataHandler():
         json_start = recv_rawdata.find(b'{')
         json_end = recv_rawdata.find(b'}') + 1
         json_payload = recv_rawdata[json_start:json_end] if json_start != -1 and json_end != 0 else b""
-
+        
         return json_payload
 
     # Generate random device id
@@ -56,6 +56,40 @@ class DataHandler():
                     print('[!] Encountered exception error while generating device ID: %s' % e)
             else:
                 print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
+        
+# Alarmsystem funktion
+    def alarmSystem(self): 
+        while True: 
+            try:
+                avgDif = self.calcAvgtempDif()
+
+                alarmThreshold = 3 #Tolerancen for temperatur forskel
+
+                if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
+                    self.triggerAlarm(avgDif)
+
+                time.sleep (60 * 60)
+            except Exception as e:
+                print ('[!] Error in temperature monitoring: %s' % e)
+
+#Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
+    def calcAvgtempDif(self):
+        try: 
+            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE timestamp >= %s - INTERVAL 24 HOUR', (self.session.getCurrentTime(),))
+            readings = self.mycursor.fetchall()
+
+        #Udregn selve gennemsnitstemperaturen
+            if len(readings) > 1:
+                tempDifs = [readings[i][0] - readings [i][1] for i in range (1, len (readings))]
+                avgDif = sum (tempDifs) / len (tempDifs)
+            print(f'[i] Average Temperature Difference: {avgDif}')
+        
+        except Exception as e:
+            print ('[!] Error in calculating average temperature difference: %s' % e)
+            return 0.0
+    
+    def triggerAlarm (self, avgDif):
+        print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
 
     # Handler af målingsdata fra vandspildsmåleren
     def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
