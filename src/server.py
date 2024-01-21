@@ -25,7 +25,7 @@ class DataHandler():
         json_start = recv_rawdata.find(b'{')
         json_end = recv_rawdata.find(b'}') + 1
         json_payload = recv_rawdata[json_start:json_end] if json_start != -1 and json_end != 0 else b""
-
+        
         return json_payload
 
     # Generate random device id
@@ -74,22 +74,22 @@ class DataHandler():
 
 #Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
     def calcAvgtempDif(self):
-        currentTime = self.session.getCurrentTime()
         try: 
-            self.mycursor.execute('SELECT temp_pipe FROM tempreadings WHERE timestamp >= %s - INTERVAL 24 HOUR', currentTime,)
+            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE timestamp >= %s - INTERVAL 24 HOUR', (self.session.getCurrentTime(),))
             readings = self.mycursor.fetchall()
 
         #Udregn selve gennemsnitstemperaturen
-            #Tjekker om der er nok målinger til udregningen
-            if not readings or len(readings) < 2:
-                return 0.0 
-            
-            tempDifs = [readings[i][0] - readings [i - 1][0] for i in range (1, len (readings))]
-            avgDiff = sum (tempDifs) / len (tempDifs)
-            return avgDiff
+            if len(readings) > 1:
+                tempDifs = [readings[i][0] - readings [i][1] for i in range (1, len (readings))]
+                avgDif = sum (tempDifs) / len (tempDifs)
+            print(f'[i] Average Temperature Difference: {avgDif}')
+        
         except Exception as e:
             print ('[!] Error in calculating average temperature difference: %s' % e)
             return 0.0
+    
+    def triggerAlarm (self, avgDif):
+        print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
 
     # Handler af målingsdata fra vandspildsmåleren
     def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
