@@ -1,5 +1,5 @@
 from machine import I2C, Pin
-import time
+from time import sleep
 
 
 # Create SoftI2C object with pull-up resistors
@@ -20,7 +20,7 @@ def Config_TCN75_Sensitivity():
     except Exception as e:
         print("Error writing to thermometers:", e)
 
-    time.sleep(0.5)
+    sleep(0.5)
     
     
 def TCN75_Read_Temp():
@@ -47,4 +47,3 @@ def TCN75_Read_Temp():
         print("Error reading from thermometers:", e)
         
 # Config_TCN75_Sensitivity()
-

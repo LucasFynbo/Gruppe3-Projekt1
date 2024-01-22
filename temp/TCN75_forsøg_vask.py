@@ -11,4 +11,4 @@ while True:
         # Write the output to the file
         file.write('Term 1: {}\nTerm 2: {}\n'.format(TCN75_term1, TCN75_term2))
     file.close
-    time.sleep(2)
+    time.sleep(600)
