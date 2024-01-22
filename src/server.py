@@ -63,25 +63,10 @@ class DataHandler():
             else:
                 print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
         
-    # Alarmsystem funktion
-    def alarmSystem(self): 
-        while True: 
-            try:
-                avgDif = self.calcAvgtempDif()
-
-                alarmThreshold = 3 #Tolerancen for temperatur forskel
-
-                if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
-                    self.triggerAlarm(avgDif)
-
-                time.sleep (60 * 60)
-            except Exception as e:
-                print ('[!] Error in temperature monitoring: %s' % e)
-
-#Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
-    def calcAvgtempDif(self):
+    #Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
+    def alarm(self, src_device_id):
         try: 
-            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE timestamp >= %s - INTERVAL 24 HOUR', (self.session.getCurrentTime(),))
+            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE device_id = %s', (src_device_id,))
             readings = self.mycursor.fetchall()
 
         #Udregn selve gennemsnitstemperaturen
@@ -90,12 +75,15 @@ class DataHandler():
                 avgDif = sum (tempDifs) / len (tempDifs)
             print(f'[i] Average Temperature Difference: {avgDif}')
         
+            alarmThreshold = 3 #Tolerancen for temperatur forskel
+
+            if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
+                print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
+            
+
         except Exception as e:
             print ('[!] Error in calculating average temperature difference: %s' % e)
-            return 0.0
-    
-    def triggerAlarm (self, avgDif):
-        print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
+            return None
 
     # Handler af målingsdata fra vandspildsmåleren
     def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
@@ -310,11 +298,11 @@ class DataHandler():
 
     def keepAliveSession(self, recv_rawdata):
         sessionToken = self.session.getCookieID(recv_rawdata)
-        self.session.extend_session(sessionToken)
+        self.session.extendSession(sessionToken)
 
     def cleanupLoop(self):
         while True:
-            self.session.cleanup_session()
+            self.session.cleanupSession()
             time.sleep(40)
 
 class SessionHandler:
@@ -367,7 +355,7 @@ class SessionHandler:
 
             if result:
                 device_id = result[0]
-                self.extend_session(cookie_value)
+                self.extendSession(cookie_value)
 
                 return 'AuthSucceed', device_id  # Hvis authentication gik igennem
             else:
@@ -390,7 +378,7 @@ class SessionHandler:
                 print('[+] Received Cookie Value:', cookie_value)
                 return cookie_value
 
-    def extend_session(self, SessionToken):
+    def extendSession(self, SessionToken):
         print(f"\n[+] Extending session for: {SessionToken}")
         try:
             self.mycursor.execute('SELECT * FROM session WHERE session_id = %s', (SessionToken,))
@@ -406,7 +394,7 @@ class SessionHandler:
             print('[!] Error in extending session: %s' % e)
             return False
 
-    def cleanup_session(self):
+    def cleanupSession(self):
         try:
             # Hent alle sessions fra databasen
             self.mycursor.execute('SELECT session_id, last_activity FROM session')
