@@ -21,22 +21,21 @@ except Exception as e:
     print("Error writing to thermometer:", e)
 
 time.sleep(0.5)
-while True:
-    try:
-        # Read the temperature value (2 bytes)
-        #term_address is the address of the device
-        #0x00 is the address for the amibent temperature register(the place that have the temperature)
-        #2 is the number of bits we recieve
-        data = i2c.readfrom_mem(term_address, 0x00, 2)
-        
-        # Convert the data to 11-bits
-        temp = (((data[0] * 256) + (data[1] & 0xE0)) / 32)
-        cTemp = temp * 0.125
 
-        # Print the temperature
-        print("Temperature:", cTemp, "°C")
-
-    except Exception as e:
-        print("Error reading from thermometer:", e)
+try:
+    # Read the temperature value (2 bytes)
+    #term_address is the address of the device
+    #0x00 is the address for the amibent temperature register(the place that have the temperature)
+    #2 is the number of bits we recieve
+    data = i2c.readfrom_mem(term_address, 0x00, 2)
         
-    time.sleep(1)
+    # Convert the data to 11-bits
+    temp = (((data[0] * 256) + (data[1] & 0xE0)) / 32)
+    cTemp = temp * 0.125
+
+    # Print the temperature
+    print("Temperature:", cTemp, "°C")
+
+except Exception as e:
+    print("Error reading from thermometer:", e)
+        
