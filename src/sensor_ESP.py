@@ -3,7 +3,7 @@ import socket
 import sensor_Connection
 import time
 import ujson as json
-import tcn_library
+import tcn
 
 class MySocket:
     def __init__(self):
@@ -66,7 +66,7 @@ class MySocket:
                         file.write(f"DeviceID:{self.device_id}\nPassword:{self.password}")
 
                 elif 'recording data' == type:
-                        temperature_pipe, temperature_room = tcn_library.TCN75_Read_Temp()
+                        temperature_pipe, temperature_room = tcn.TCN75_Read_Temp()
 
                         print(f"[+] Read temperature: {temperature_pipe}, {temperature_room}")
                         data_packet = {'data': f'{type}', 'device_id': f'{self.device_id}','temp_pipe': f'{temperature_pipe}', 'temp_room': f'{temperature_room}'}
@@ -79,7 +79,7 @@ class MySocket:
                 
 if __name__ == "__main__":
     esp_ip = sensor_Connection.sensorConnection()    
-    tcn_library.Config_TCN75_Sensitivity()
+    tcn.Config_TCN75_Sensitivity()
     
     mysocket = MySocket()
 

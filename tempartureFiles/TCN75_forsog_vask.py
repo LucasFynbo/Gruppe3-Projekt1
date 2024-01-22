@@ -1,6 +1,6 @@
 from machine import I2C, Pin
 import time
-import tcn
+import tcn as tcn
 
 #calls config registor of TCN75 and changes resolution of the themometers to 0.125°C
 tcn.Config_TCN75_Sensitivity()
