@@ -1,6 +1,9 @@
 from machine import I2C, Pin
-import time
-
+from time import sleep
+#This program generate an I2C connection with two TCN75 thermometers.
+#has two functions
+#Config_TCN75_value contacts the configuration register of the TCN75 and changes the resolution to 0.15 celsius
+#TCN75_Read_Temp reads the temperatur of the two TCN75 devices. Prints the result and returns the result as cTemp1 and cTemp2
 
 # Create SoftI2C object with pull-up resistors
 i2c = I2C(scl=Pin(9), sda=Pin(8), freq=100000)
@@ -20,7 +23,7 @@ def Config_TCN75_Sensitivity():
     except Exception as e:
         print("Error writing to thermometers:", e)
 
-    time.sleep(0.5)
+    sleep(0.5)
     
     
 def TCN75_Read_Temp():
@@ -47,4 +50,3 @@ def TCN75_Read_Temp():
         print("Error reading from thermometers:", e)
         
 # Config_TCN75_Sensitivity()
-

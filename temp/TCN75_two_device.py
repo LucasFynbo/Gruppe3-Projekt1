@@ -1,8 +1,9 @@
 from machine import I2C, Pin
 import time
 
+#This program reads the temperatur of two TCN devices and prints the result in the terminal
 
-# Create SoftI2C object with pull-up resistors
+# Create SoftI2C object
 i2c = I2C(scl=Pin(9), sda=Pin(8), freq=100000)
 
 # Set the correct I2C addresses for the TCN75A thermometers
