@@ -90,7 +90,7 @@ class DataHandler():
         try:
             self.mycursor.execute('INSERT INTO tempreadings (device_id, temp_pipe, temp_room) VALUES (%s,%s,%s)', (device_id, temp_pipe, temp_room))
             self.db.commit()
-
+            self.alarm(device_id)
             print('[+] Successfully added Temperature entry for %s \n' % device_id)
         except Exception as e:
             print('[!] Encountered exception error while adding temperature entry: %s' % e)
