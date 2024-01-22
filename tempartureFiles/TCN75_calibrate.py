@@ -1,5 +1,10 @@
 from machine import SoftI2C, Pin
-import time
+from time import sleep
+#this code is used to kickstart the I2C procedure
+#it takes a single reading of the TCN75
+#we had problems where if we started with two I2C devieces at the same time. It would not work
+#but this code runs it with one device. And after that the ESP32 is ready for two devices at the same time
+
 
 # Define your SDA and SCL pins
 sda_pin = 8
@@ -20,7 +25,10 @@ try:
 except Exception as e:
     print("Error writing to thermometer:", e)
 
-time.sleep(0.5)
+sleep(0.5)
+
+#import TCN75Calibrate
+#import TCN75ForsøgVask
 
 try:
     # Read the temperature value (2 bytes)

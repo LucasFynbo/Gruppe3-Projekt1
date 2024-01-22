@@ -7,19 +7,41 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="stylesheet" href="css/panel_home.css" type="text/css"/>
 
-        <script defer src="script/check.js"></script>
+        <script defer src="script/check_dashboard.js"></script>
         <script defer src="script/keep-alive.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script defer src="script/group.js"></script>
     </head>
     <body>
         <div id="sidebar">
             <img id="logo" src="images/logo.png"><br>
-            <a class="link-text" href="#" onclick="">Add sensor to group</a>
+            <a class="link-text" id="sb-addsensor-group-btn">Add sensor to group</a>
             <div class="option-text-bar"></div>
 
-            <a class="link-text" href="#" onclick="">Settings</a>
+            <a class="link-text" id="sb-settings-btn">Settings</a>
             <div class="option-text-bar"></div>
         </div>
-
+        <div id="add-sensor-to-group-menu">
+            <div id="addsensor-menu_open">
+                <div id="close_btn_add-sensor-menu">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+                <h2>Add sensor to group</h2>
+                <label for="inputbox_deviceid" class="static-text">Device#</label><input type="text" placeholder="Device ID" id="inputbox_deviceid" required>
+                <input type="password" placeholder="Password" id="inputbox_password" required>
+                <div id="submit-btn">Submit</div>
+            </div>
+        </div>
+        <div id="settings-menu">
+            <div id="settingsmenu_open">
+                <div id="close_btn_settings-menu">
+                    <div class="bar"></div>
+                    <div class="bar"></div>
+                </div>
+                <h2>Settings</h2>
+            </div>
+        </div>
         <div id="topbar">
             <div class="topbar-option-splitter"></div>
             <a class="link-text" href="panel_home.html">Hjem</a>
@@ -34,7 +56,9 @@
         <div id="main-window">
             <div id="activity-wnd">
                 <h2>Activity <span class="time-period">(24h)</span></h2>
-                <div id="diagram"></div>
+                <div>
+                    <canvas id="activity-chart"></canvas>
+                </div>
             </div>
             <div id="container-dash">
                 <div id="information-wnd">
@@ -43,9 +67,10 @@
                 </div>
                 <div id="group-wnd">
                     <h2>Groups</h2>
-                    <div id="groups"></div>
+                    
                 </div>
             </div>
         </div>
+        <script src="script/graph.js"></script>
     </body>
 </html>

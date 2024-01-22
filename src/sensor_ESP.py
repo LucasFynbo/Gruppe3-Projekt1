@@ -3,7 +3,7 @@ import socket
 import sensor_Connection
 import time
 import ujson as json
-import tcn_library
+import tcn
 
 class MySocket:
     def __init__(self):
@@ -19,15 +19,18 @@ class MySocket:
         # Kontroller om der allerede er generet et device ID for ESP'en
         try:
             with open('device_id.txt', 'r') as file:
-                self.device_id = file.read()
+                credentials_file = file.read()
+            
             # Hvis filen er tom
-            if '' == id:
+            if '' == credentials_file:
                 print("[!] Device ID file empty, requesting...")
                 self.send_data(type='device ID request')
             # Hvis Device ID'et allerede er skabt for ESP'en
             else:
+                for line in credentials_file.split('\n'):
+                    if "DeviceID:" in line:
+                        self.device_id = line.split(':')[1].strip()
                 print(f"[+] Device ID: {self.device_id}")
-                pass
         except OSError as e:
             # Hvis filen ikke eksisterer
             if errno.ENOENT == e.errno:
@@ -60,10 +63,10 @@ class MySocket:
 
                     # Gem det genereret device id og password til 'device_id.txt'
                     with open('device_id.txt', 'w') as file:
-                        file.write(self.device_id, self.password)
+                        file.write(f"DeviceID:{self.device_id}\nPassword:{self.password}")
 
                 elif 'recording data' == type:
-                        temperature_pipe, temperature_room = tcn_library.TCN75_Read_Temp()
+                        temperature_pipe, temperature_room = tcn.TCN75_Read_Temp()
 
                         print(f"[+] Read temperature: {temperature_pipe}, {temperature_room}")
                         data_packet = {'data': f'{type}', 'device_id': f'{self.device_id}','temp_pipe': f'{temperature_pipe}', 'temp_room': f'{temperature_room}'}
@@ -76,10 +79,10 @@ class MySocket:
                 
 if __name__ == "__main__":
     esp_ip = sensor_Connection.sensorConnection()    
-    tcn_library.Config_TCN75_Sensitivity()
+    tcn.Config_TCN75_Sensitivity()
     
     mysocket = MySocket()
 
     while True:
         mysocket.send_data(type='recording data')
-        time.sleep(1)
+        time.sleep(30)
