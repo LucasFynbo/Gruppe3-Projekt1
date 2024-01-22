@@ -4,5 +4,7 @@ esp.osdebug(None)
 #import webrepl
 #webrepl.start()
 
-import TCN75Calibrate
-import TCN75ForsøgVask
+#calls calibrate program, that ensures that the I2C connection works
+import TCN75_calibrate
+#calls the program that measures temperatur and saves the result in file
+import TCN75_forsog_vask

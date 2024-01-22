@@ -1,6 +1,7 @@
 from machine import SoftI2C, Pin
 from time import sleep
-#this code only functions to kickstart the I2C procedure
+#this code is used to kickstart the I2C procedure
+#it takes a single reading of the TCN75
 #we had problems where if we started with two I2C devieces at the same time. It would not work
 #but this code runs it with one device. And after that the ESP32 is ready for two devices at the same time
 
