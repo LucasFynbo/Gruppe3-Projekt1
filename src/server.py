@@ -92,7 +92,9 @@ class DataHandler():
     # Handler af målingsdata fra vandspildsmåleren
     def recordingdata_handler(self, device_id="NULL", temp_pipe=0, temp_room=0):
         try:
-            self.mycursor.execute('INSERT INTO tempreadings (device_id, temp_pipe, temp_room) VALUES (%s,%s,%s)', (device_id, temp_pipe, temp_room))
+            temp_diff = temp_pipe - temp_room
+
+            self.mycursor.execute('INSERT INTO tempreadings (device_id, temp_pipe, temp_room, temp_diff) VALUES (%s,%s,%s,%s)', (device_id, temp_pipe, temp_room, temp_diff))
             self.db.commit()
             self.alarm(device_id)
             print('[+] Successfully added Temperature entry for %s \n' % device_id)
@@ -161,7 +163,8 @@ class DataHandler():
 
             response_data = {
             'status': 'Session: Authorization confirmed',
-
+        
+            'username': f'{src_device_id}',
             'linked_devices': f'{linked_devices}',
             'linked_device_names': f'{linked_device_names}'
             }
@@ -296,9 +299,37 @@ class DataHandler():
 
         return linked_device_names
 
+    def getData(self, recv_request):
+        cookieStatus, src_device_id, stdcol_name  = self.session.sessionCookieAuth(recv_request)
+        
+        # Get linked devices list
+        linked_devices = self.getLinkedDevices(src_device_id)
+        linked_device_names = self.getLinkedDeviceNames(linked_devices)
+
+        for device in linked_devices:
+            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE device_id = %s', (device,))
+            device_data = self.mycursor.fetchall()
+
+        # Put the device data into a list and show which device it is for so i can make a new dataset for my graph showing the values
+
+        response_data = {
+        'status': 'Session: Authorization confirmed',
+    
+        'username': f'{src_device_id}',
+        'linked_devices': f'{linked_devices}',
+        'linked_device_names': f'{linked_device_names}'
+        }
+        response_body = json.dumps(response_data)
+
+        response = "HTTP/1.1 200 OK\r\n"
+        response += f"Content-Type: application/json\r\n"
+        response += f"Content-Length: {len(response_body)}\r\n"
+        response += "\r\n"
+        response += response_body
+        return response
+
     def renameDevice(self, trgt_deviceID):
         print(f"[+] Renaming {trgt_deviceID}")
-        return
 
     def keepAliveSession(self, recv_rawdata):
         sessionToken = self.session.getCookieID(recv_rawdata)
@@ -373,7 +404,7 @@ class SessionHandler:
 
         data = recv_rawdata.decode('utf-8')
 
-        print(f"[i] Converted raw data to str in sessionCookieAuth: {data}")
+        print(f"[i] Converted raw data to str in sessionCookieAuth")
 
         for line in data.split('\r\n'):
             if 'Cookie:' in line:
@@ -542,6 +573,10 @@ class SocketCommunication:
             target_deviceID = data_dict_tcp.get('target', '')
             self.handler.renameDevice(target_deviceID)
             
+        elif 'session get data' == message_type:
+            response_data = self.handler.getData(post_data)
+
+            client_socket.send(response_data.encode('utf-8'))
         else:
             print("[!] Error: Unrecognized message type.")
         
