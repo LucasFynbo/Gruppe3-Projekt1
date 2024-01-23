@@ -64,14 +64,14 @@ class DataHandler():
                 print('[!] Device ID: %s already exist in the database, retrying...' % device_id)
         
     #Udregning af gennemsnits temperatur,tager fra de sidste 24 timer           
-    def alarm(self, src_device_id):
+    def alarm(self, srcDeviceId):
         try: 
-            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE device_id = %s', (src_device_id,))
+            self.mycursor.execute('SELECT temp_pipe, temp_room FROM tempreadings WHERE device_id = %s', (srcDeviceId,))
             readings = self.mycursor.fetchall()
 
         #Udregn selve gennemsnitstemperaturen
             if len(readings) > 1:
-                tempDifs = [readings[i][0] - readings [i][1] for i in range (1, len (readings))]
+                tempDifs = [abs(readings[i][0] - readings [i][1]) for i in range (1, len (readings))]
                 avgDif = sum (tempDifs) / len (tempDifs)
             print(f'[i] Average Temperature Difference: {avgDif}')
         
@@ -79,7 +79,11 @@ class DataHandler():
 
             if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
                 print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
-            
+                #Indsæt i mysql loggen at alarm er triggered
+                logMsg = f" Alarm triggered for {srcDeviceId}. Average temperature difference: {avgDif}"
+                self.mycursor.execute('INSERT INTO log (alarmtype) VALUES (%s)', (logMsg,))
+                self.db.commit()
+                print("[i] Log entry added.")
 
         except Exception as e:
             print ('[!] Error in calculating average temperature difference: %s' % e)
