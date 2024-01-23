@@ -7,7 +7,7 @@ function sendData() {
 
     console.log('JSON data to be sent:', JSON.stringify(senddata));
 
-    fetch('https://79.171.148.173/api', {
+    fetch('https://waw.sof60.dk/api', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
