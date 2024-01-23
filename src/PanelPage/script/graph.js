@@ -1,12 +1,9 @@
+var datasets = [];
+
 // Data til grafen
 var data = {
     labels: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"],
-    datasets: [{
-        label: "Dit data",
-        fill: false,
-        borderColor: "rgb(75, 192, 192)",
-        data: [10, 30, 15, 25,10, 30, 15, 25, 20, 10, 30, 15, 25]
-    }]
+    datasets: []  // Initialize without any datasets
 };
 
 // Indstillinger for grafen
@@ -39,17 +36,23 @@ var myLineChart = new Chart(ctx, {
     options: options
 });
 
-// Simulerer tilføjelse af nyt datapunkt hvert sekund
-setInterval(function () {
-    // Tilføj et nyt datapunkt
-    var newDataPoint = Math.floor(Math.random() * 41); // Genererer et tal mellem 0 og 40
-    data.datasets[0].data.push(newDataPoint);
+// Listen for the custom event
+document.addEventListener('updateGraph', function (event) {
+    // Clear existing datasets
+    datasets = [];
 
-    // Fjern det ældste datapunkt, hvis der er mere end 24 datapunkter
-    if (data.datasets[0].data.length > 25) {
-        data.datasets[0].data.shift();
-    }
+    // Update datasets with the received data
+    const { deviceId, deviceName } = event.detail;
+    datasets.push({
+        label: deviceName, // Assuming deviceName is the name you want for the label
+        fill: false,
+        borderColor: "rgb(75, 192, 192)",
+        data: [/* Your data for this device */]  // Add the actual data for this device
+    });
 
-    // Opdater grafen
+    // Set the datasets in the chart data
+    myLineChart.data.datasets = datasets;
+
+    // Call update() to refresh the chart
     myLineChart.update();
-}, 2000);
+});
