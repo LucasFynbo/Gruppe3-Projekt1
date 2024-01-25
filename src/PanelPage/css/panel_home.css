@@ -163,13 +163,6 @@ body {
 .row2-group-line {
     display: flex;
     margin-left: 15px;
-}
-
-.row1-group-line {
-    margin-top: 5px;
-}
-
-.row2-group-line {
     margin-bottom: 5px;
 }
 
@@ -285,4 +278,8 @@ body {
 
 #submit-btn:hover {
     cursor: pointer;
+}
+
+.log-entry {
+    margin: 5px;
 }

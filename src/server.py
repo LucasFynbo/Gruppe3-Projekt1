@@ -73,11 +73,12 @@ class DataHandler():
             if len(readings) > 1:
                 tempDifs = [abs(readings[i][0] - readings [i][1]) for i in range (1, len (readings))] #Beregner temperaturforskelle mellem hver aflæsning vha. lister. abs() sørger for at det ikke bliver negativt.
                 avgDif = sum (tempDifs) / len (tempDifs) # Her udregnes gennesnittet og gemmer det i avgDif
+                avgDif = "{:.2f}".format(avgDif)
             print(f'[i] Average Temperature Difference: {avgDif}')
         
             alarmThreshold = 3 #Tolerancen for temperatur forskel
 
-            if avgDif > alarmThreshold: #hvis gennemsnitsforskellen er større end tolerancen
+            if float(avgDif) > int(alarmThreshold): #hvis gennemsnitsforskellen er større end tolerancen
                 print (f"[!] Alarm Triggered! Average temperature exceeds threshold: {avgDif}")
                 
                 #Indsæt i mysql loggen at alarm er triggered

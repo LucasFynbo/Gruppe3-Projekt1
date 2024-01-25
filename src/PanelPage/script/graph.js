@@ -21,7 +21,9 @@ var options = {
                 display: true,
                 text: 'Temperaturforskel'
             },
-            beginAtZero: true
+            beginAtZero: true,
+            max: 5.0,
+            min: 0.0
         }
     }
 };
@@ -40,7 +42,7 @@ function getRandomInt(min, max) {
 }
 
 document.addEventListener('updateGraph', function (event) {
-    // Get existing datasets
+
     var datasets = myLineChart.data.datasets || [];
 
     // Opdater dataset med det modtaget info
@@ -50,11 +52,13 @@ document.addEventListener('updateGraph', function (event) {
     const randomGreen = getRandomInt(0, 255);
     const randomBlue = getRandomInt(0, 255);
 
+    const recentTemperatures = temperature_data[deviceId].slice(-24);
+
     datasets.push({
         label: deviceName,
         fill: false,
         borderColor: `rgb(${randomRed}, ${randomGreen}, ${randomBlue})`,
-        data: temperature_data[deviceId] || []
+        data: recentTemperatures || []
     });
 
     myLineChart.data.datasets = datasets;
