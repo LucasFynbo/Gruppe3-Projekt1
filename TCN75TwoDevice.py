@@ -6,8 +6,8 @@ import time
 i2c = I2C(scl=Pin(9), sda=Pin(8), freq=100000)
 
 # Set the correct I2C addresses for the TCN75A thermometers
-term_address_1 = 0x49
-term_address_2 = 0x48
+term_address_1 = 73 #0x49
+term_address_2 = 72 #0x48
 
 # Configuration register value for 0.125 Celsius resolution
 config_register_value = 0x60  # Binary: 0110 0000
@@ -41,4 +41,4 @@ while True:
     except Exception as e:
         print("Error reading from thermometers:", e)
         
-    time.sleep(1)
+    time.sleep(5)

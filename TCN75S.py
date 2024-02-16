@@ -8,8 +8,8 @@ scl_pin = 9
 # Create SoftI2C object with pull-up resistors
 i2c = SoftI2C(sda=Pin(sda_pin, Pin.IN, Pin.PULL_UP), scl=Pin(scl_pin, Pin.IN, Pin.PULL_UP))
 
-# Set the correct I2C address for the TCN75A (0x48)
-term_address = 0x49
+# Set the correct I2C address for the TCN75A (0x49)
+term_address = 72#0x49
 
 # Configuration register value for 0.125 Celsius resolution
 config_register_value = 0x60  # Binary: 0100 0000
