@@ -1,5 +1,5 @@
 body {
-    display: flex;
+    display: none;
     flex-direction: column;
     margin: 0;
     overflow: hidden;
@@ -75,6 +75,10 @@ body {
     text-align: left;
 }
 
+#sidebar .link-text:hover {
+    cursor: pointer;
+}
+
 #logo {
     height: 70px;
     width: 45px;
@@ -128,6 +132,11 @@ body {
     font-weight: 100;
 }
 
+#activity-chart {
+    width: 100% !important;
+    height: 220px !important;
+}
+
 #main-window #information-wnd {
     width: 45%;
     height: 45vH;
@@ -143,4 +152,134 @@ body {
 
     margin-left: 20px;
 
+}
+
+.full-group-line {
+    border: 3px solid #cecece;
+    margin: 10px;
+}
+
+.row1-group-line,
+.row2-group-line {
+    display: flex;
+    margin-left: 15px;
+    margin-bottom: 5px;
+}
+
+.row1-group-line h3 {
+    padding-right: 20vW;
+    margin: 0;
+}
+
+.row2-group-line .device-id-group-txt {
+    margin: 0;
+    font-weight: bold;
+}
+
+.row1-group-line h3,
+.row2-group-line .device-id-inserted {
+    font-weight: 100;
+}
+
+.group-option-btn img {
+    width: 20px;
+    height: 20px;
+}
+
+.group-option-btn:hover {
+    cursor: pointer;
+}
+
+.bar {
+    width: 30px;
+    height: 5px;
+    background-color: #333;
+    margin: 6px 0;
+}
+
+.bar:nth-child(1) {
+    transform: rotate(45deg) translate(7.3px, 0px);
+}
+
+.bar:nth-child(2) {
+    transform: rotate(-45deg) translate(7.3px, 0px);
+}
+
+#addsensor-menu_open,
+#settingsmenu_open {
+    display: none;
+    position: fixed;
+    width: 20vW;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+
+    text-align: left;
+    z-index: 2;
+}
+
+#addsensor-menu_open h2,
+#settingsmenu_open h2 {
+    margin-bottom: 10px;
+
+}
+
+#inputbox_deviceid,
+#inputbox_password {
+    width: 15vW;
+    font-size: 20px;
+    padding: 12px 8px;
+    margin: 1px 0;
+    box-sizing: border-box;
+    border: 3px solid #cecece;
+    -webkit-transition: 0.5s;
+    transition: 0.5s;
+    outline: none;
+    border-radius: 15px;
+    color: #525252;
+}
+
+.static-text {
+    display: flex;
+    right: -8px;
+    top: 42px;
+    position: relative;
+    color: #525252;
+    font-size: 25px;
+    font-weight: bold;
+    z-index: 1;
+}
+
+#inputbox_deviceid {
+    padding-left: 5.5vW;
+}
+
+#inputbox_deviceid.error,
+#inputbox_password.error {
+    border: 3px solid #8c1414;
+}
+
+#close_btn_add-sensor-menu,
+#close_btn_settings-menu {
+    cursor: pointer;
+    display: inline-block;
+}
+
+#submit-btn {
+    margin-left: 78%;
+    border-radius: 10px;
+    font-size: 20px;
+    border: 3px solid #cecece;
+}
+
+#submit-btn:hover {
+    cursor: pointer;
+}
+
+.log-entry {
+    margin: 5px;
 }

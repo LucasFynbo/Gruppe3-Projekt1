@@ -1,61 +1,52 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // How it Works
-    const hiwClickable = document.getElementById('hiw_clickable');
-    const hiwOpen = document.getElementById('hiw_open');
-    const closeBtnHiw = document.getElementById('close_btn_hiw');
+    // Add sensor to group
+    const addsensorClickable = document.getElementById('sb-addsensor-group-btn');
+    const addsensorOpen = document.getElementById('addsensor-menu_open');
+    const closeBtnAddsensor = document.getElementById('close_btn_add-sensor-menu');
 
-    hiwClickable.addEventListener('click', function() {
-        hiwOpen.style.display = 'block';
+    addsensorClickable.addEventListener('click', function() {
+        addsensorOpen.style.display = 'block';
     });
 
-    closeBtnHiw.addEventListener('click', function() {
-        hiwOpen.style.display = 'none';
+    closeBtnAddsensor.addEventListener('click', function() {
+        addsensorOpen.style.display = 'none';
     });
 
-    // Contact Us
-    const cuClickable = document.getElementById('cu_clickable');
-    const cuOpen = document.getElementById('cu_open');
-    const closeBtnCu = document.getElementById('close_btn_cu');
+    // Settings
+    const SettingsClickable = document.getElementById('sb-settings-btn');
+    const settingsOpen = document.getElementById('settingsmenu_open');
+    const closeBtnSettings = document.getElementById('close_btn_settings-menu');
 
-    cuClickable.addEventListener('click', function() {
-        cuOpen.style.display = 'block';
+    SettingsClickable.addEventListener('click', function() {
+        settingsOpen.style.display = 'block';
     });
 
-    closeBtnCu.addEventListener('click', function() {
-        cuOpen.style.display = 'none';
+    closeBtnSettings.addEventListener('click', function() {
+        settingsOpen.style.display = 'none';
     });
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('submit-arrow').addEventListener('click', sendData);
+    document.getElementById('submit-btn').addEventListener('click', addSensorGroup);
 });
 
-// Sender User/Password via https POST request til serveren
-function sendData() {
-
-    // Hent værdierne fra inputfelterne
+// Add sensor to group funktion
+function addSensorGroup() {
     var deviceID = document.getElementById('inputbox_deviceid').value;
     var password = document.getElementById('inputbox_password').value;
-    
-    const responseStatusText = document.querySelector("#response-status");
 
     // Tjek om de er tomme inden vi sender dataen til serveren
     if (deviceID.trim() === '') {
         document.getElementById('inputbox_deviceid').classList.add('error');
-        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
 
     } else {
         document.getElementById('inputbox_deviceid').classList.remove('error');
-        responseStatusText.textContent = "";
     }
 
     if (password.trim() === '') {
         document.getElementById('inputbox_password').classList.add('error');
-        const responseStatusText = document.querySelector("#response-status");
-        responseStatusText.textContent = "Please fill out 'Device-ID' and 'Password' boxes";
     } else {
         document.getElementById('inputbox_password').classList.remove('error');
-        responseStatusText.textContent = "";
     }
 
     if (deviceID.trim() === '' || password.trim() === '') {
@@ -64,7 +55,7 @@ function sendData() {
     }
 
     var senddata = {
-        data: 'login request',
+        data: 'add sensor request',
         user: deviceID,
         pass: password
     };
@@ -83,21 +74,17 @@ function sendData() {
         return response.json();
     })
     .then(data => {
-        const responseStatusText = document.querySelector("#response-status");
-
-        if (data.status === 'Login: Credentials accepted') {
+        if (data.status === 'Sensor: Add request succeeded') {
             console.log('200 OK; login authenticated');
             window.location.href = '/panel_home';
-        } else if (data.status === 'Error: Invalid credentials') {
+
+        } else if (data.status === 'Sensor: Invalid credentials') {
             document.getElementById('inputbox_deviceid').classList.add('error');
             document.getElementById('inputbox_password').classList.add('error');
-
-            responseStatusText.textContent = "You have entered an invalid username or password";
 
             throw new Error("HTTP error; 401 Unauthorized; Invalid credentials");
         } else {
             console.log('520 Unknown; Unknown error occurred');
-            responseStatusText.textContent = "An unknown error occured. Please fill out the 'contact us' form for assistance";
             
             throw new Error("HTTP error; 520 Unknown; Unknown error occurred");
         }
@@ -106,4 +93,5 @@ function sendData() {
         // Håndterer fejl her
         console.error('Error:', error);
     });
+    
 }

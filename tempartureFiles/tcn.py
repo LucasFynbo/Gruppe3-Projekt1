@@ -1,26 +1,32 @@
 from machine import I2C, Pin
-import time
-
+from time import sleep
+#This program generate an I2C connection with two TCN75 thermometers.
+#has two functions
+#Config_TCN75_value contacts the configuration register of the TCN75 and changes the resolution to 0.15 celsius
+#TCN75_Read_Temp reads the temperatur of the two TCN75 devices. Prints the result and returns the result as cTemp1 and cTemp2
 
 # Create SoftI2C object with pull-up resistors
 i2c = I2C(scl=Pin(9), sda=Pin(8), freq=100000)
 
 # Set the correct I2C addresses for the TCN75A thermometers
-term_address_1 = 73 #0x49
-term_address_2 = 72 #0x48
+term_address_1 = 0x49
+term_address_2 = 0x48
 
 # Configuration register value for 0.125 Celsius resolution
 config_register_value = 0x60  # Binary: 0110 0000
+def Config_TCN75_Sensitivity():
+    
+    try:
+        # Write the configuration to the thermometers
+        i2c.writeto_mem(term_address_1, 0x01, bytearray([config_register_value]))
+        i2c.writeto_mem(term_address_2, 0x01, bytearray([config_register_value]))
+    except Exception as e:
+        print("Error writing to thermometers:", e)
 
-try:
-    # Write the configuration to the thermometers
-    i2c.writeto_mem(term_address_1, 0x01, bytearray([config_register_value]))
-    i2c.writeto_mem(term_address_2, 0x01, bytearray([config_register_value]))
-except Exception as e:
-    print("Error writing to thermometers:", e)
-
-time.sleep(0.5)
-while True:
+    sleep(0.5)
+    
+    
+def TCN75_Read_Temp():
     try:
         # Read the temperature values from both thermometers (2 bytes each)
         data_1 = i2c.readfrom_mem(term_address_1, 0x00, 2)
@@ -37,8 +43,10 @@ while True:
         # Print the temperatures
         print("Temperature 1:", cTemp_1, "°C")
         print("Temperature 2:", cTemp_2, "°C")
+        
+        return cTemp_1, cTemp_2
 
     except Exception as e:
         print("Error reading from thermometers:", e)
         
-    time.sleep(5)
+# Config_TCN75_Sensitivity()
